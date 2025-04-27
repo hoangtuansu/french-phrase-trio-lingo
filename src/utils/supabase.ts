@@ -1,10 +1,18 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Default to empty strings if environment variables are not defined
+// This prevents the immediate error, but the client won't work without proper values
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+// Create the Supabase client with error handling
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Check if Supabase configuration is missing and log a helpful error
+if (!supabaseUrl || !supabaseKey) {
+  console.error('⚠️ Supabase configuration missing! Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+}
 
 export interface PhraseRecord {
   id: number;
@@ -15,6 +23,10 @@ export interface PhraseRecord {
 }
 
 export const savePhraseToDb = async (phrase: Omit<PhraseRecord, 'id' | 'created_at'>) => {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+  }
+
   const { data, error } = await supabase
     .from('phrases')
     .insert([phrase])
@@ -26,6 +38,10 @@ export const savePhraseToDb = async (phrase: Omit<PhraseRecord, 'id' | 'created_
 };
 
 export const getPhrases = async () => {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+  }
+
   const { data, error } = await supabase
     .from('phrases')
     .select('*')
@@ -36,6 +52,10 @@ export const getPhrases = async () => {
 };
 
 export const deletePhrase = async (id: number) => {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+  }
+
   const { error } = await supabase
     .from('phrases')
     .delete()
@@ -43,4 +63,3 @@ export const deletePhrase = async (id: number) => {
   
   if (error) throw error;
 };
-
