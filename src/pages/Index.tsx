@@ -1,19 +1,18 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import PhraseInput from '../components/PhraseInput';
 import PhraseCard from '../components/PhraseCard';
-import { useToast } from "@/components/ui/use-toast";
-
-interface Phrase {
-  id: number;
-  french: string;
-  english: string;
-  vietnamese: string;
-}
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getPhrases, savePhraseToDb, deletePhrase, PhraseRecord } from '../utils/supabase';
 
 const Index = () => {
-  const [phrases, setPhrases] = useState<Phrase[]>([]);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: phrases = [], isLoading } = useQuery({
+    queryKey: ['phrases'],
+    queryFn: getPhrases,
+  });
 
   // Mock translation function (in a real app, this would call a translation API)
   const mockTranslate = (text: string) => {
@@ -30,28 +29,51 @@ const Index = () => {
     };
   };
 
+  const addPhraseMutation = useMutation({
+    mutationFn: (french: string) => {
+      const translations = mockTranslate(french);
+      return savePhraseToDb({
+        french,
+        english: translations.en,
+        vietnamese: translations.vi,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['phrases'] });
+      toast({
+        title: "Phrase added",
+        description: "Your phrase has been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save phrase. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deletePhrase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['phrases'] });
+      toast({
+        title: "Phrase deleted",
+        description: "The phrase has been removed from your list.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete phrase. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddPhrase = (french: string) => {
-    const translations = mockTranslate(french);
-    const newPhrase: Phrase = {
-      id: Date.now(),
-      french,
-      english: translations.en,
-      vietnamese: translations.vi,
-    };
-
-    setPhrases(prev => [newPhrase, ...prev]);
-    toast({
-      title: "Phrase added",
-      description: "Your phrase has been saved successfully.",
-    });
-  };
-
-  const handleDeletePhrase = (id: number) => {
-    setPhrases(prev => prev.filter(phrase => phrase.id !== id));
-    toast({
-      title: "Phrase deleted",
-      description: "The phrase has been removed from your list.",
-    });
+    addPhraseMutation.mutate(french);
   };
 
   return (
@@ -70,20 +92,22 @@ const Index = () => {
           <PhraseInput onAddPhrase={handleAddPhrase} />
           
           <div className="mt-8 space-y-4">
-            {phrases.map(phrase => (
-              <PhraseCard
-                key={phrase.id}
-                french={phrase.french}
-                english={phrase.english}
-                vietnamese={phrase.vietnamese}
-                onDelete={() => handleDeletePhrase(phrase.id)}
-              />
-            ))}
-            
-            {phrases.length === 0 && (
+            {isLoading ? (
+              <div className="text-center text-gray-500 py-8">Loading phrases...</div>
+            ) : phrases.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
                 No phrases added yet. Start by adding a French phrase above!
               </div>
+            ) : (
+              phrases.map((phrase: PhraseRecord) => (
+                <PhraseCard
+                  key={phrase.id}
+                  french={phrase.french}
+                  english={phrase.english}
+                  vietnamese={phrase.vietnamese}
+                  onDelete={() => deleteMutation.mutate(phrase.id)}
+                />
+              ))
             )}
           </div>
         </div>
