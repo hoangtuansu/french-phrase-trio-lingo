@@ -43,3 +43,4 @@ export const deletePhrase = async (id: number) => {
   
   if (error) throw error;
 };
+
