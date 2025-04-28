@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { PhraseRecord } from '../utils/supabase';
+import type { Language } from '../types/language';
 
 interface HistoryViewProps {
   phrases: PhraseRecord[];
@@ -21,7 +22,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
   
   useEffect(() => {
     if (isNotifying && phrases.length > 0) {
-      timerRef.current = setInterval(() => {
+      timerRef.current = global.setInterval(() => {
         const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
         toast({
           title: "Practice Time!",
@@ -63,8 +64,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
           <PhraseCard
             key={phrase.id}
             french={phrase.french}
-            english={phrase.english}
-            vietnamese={phrase.vietnamese}
+            english={phrase.translations.english?.text || ""}
+            vietnamese={phrase.translations.vietnamese?.text || ""}
             onDelete={() => onDelete(phrase.id)}
           />
         ))}
