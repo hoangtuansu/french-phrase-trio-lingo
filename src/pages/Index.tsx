@@ -4,11 +4,13 @@ import Navigation from '../components/Navigation';
 import HistoryView from '../components/HistoryView';
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPhrases, savePhraseToDb, deletePhrase, PhraseRecord } from '../utils/supabase';
-import type { Language, Translation } from '../types/language';
+import { getPhrases, savePhraseToDb, deletePhrase } from '../utils/supabase';
+import type { Language, Translation, TranslationResult } from '../types/language';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'add' | 'history'>('add');
+  const [selectedLanguages, setSelectedLanguages] = useState<Language[]>(['english', 'vietnamese']);
+  const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -18,12 +20,11 @@ const Index = () => {
   });
 
   const mockTranslate = (text: string) => {
-    // Simple mock for multiple languages and examples
     const lines = text.split('\n').filter(line => line.trim());
     
     const results = lines.map(line => {
       const isWord = !line.includes(' ');
-      const mockData: Record<string, Translation> = {
+      const mockData: Record<Language, Translation> = {
         english: {
           text: `[English for: ${line}]`,
           ...(isWord && {
@@ -101,6 +102,7 @@ const Index = () => {
 
   const handleAddPhrase = (french: string, languages: Language[]) => {
     const translations = mockTranslate(french);
+    setTranslationResults(translations);
     
     translations.forEach(translation => {
       addPhraseMutation.mutate({
@@ -127,9 +129,12 @@ const Index = () => {
           <Navigation activeView={activeView} onViewChange={setActiveView} />
           
           {activeView === 'add' ? (
-            <div className="space-y-4">
-              <PhraseInput onAddPhrase={handleAddPhrase} />
-            </div>
+            <PhraseInput 
+              onAddPhrase={handleAddPhrase}
+              selectedLanguages={selectedLanguages}
+              onLanguagesChange={setSelectedLanguages}
+              translationResults={translationResults}
+            />
           ) : (
             <HistoryView 
               phrases={phrases} 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "@/components/ui/card";
 import PhraseCard from './PhraseCard';
@@ -23,9 +24,10 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
       timerRef.current = setInterval(() => {
         const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
         toast({
-          title: "Practice Time!"
+          title: "Practice Time!",
+          description: randomPhrase.french
         });
-      }, interval * 60 * 1000); // Convert minutes to milliseconds
+      }, interval * 60 * 1000);
     }
     
     return () => {
