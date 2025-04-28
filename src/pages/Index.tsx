@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PhraseInput from '../components/PhraseInput';
-import PhraseCard from '../components/PhraseCard';
+import Navigation from '../components/Navigation';
+import HistoryView from '../components/HistoryView';
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPhrases, savePhraseToDb, deletePhrase, PhraseRecord } from '../utils/supabase';
 
 const Index = () => {
+  const [activeView, setActiveView] = useState<'add' | 'history'>('add');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -14,9 +16,7 @@ const Index = () => {
     queryFn: getPhrases,
   });
 
-  // Mock translation function (in a real app, this would call a translation API)
   const mockTranslate = (text: string) => {
-    // This is just for demonstration. In a real app, you'd use a translation API
     const mockTranslations: Record<string, { en: string; vi: string }> = {
       "bonjour": { en: "hello", vi: "xin chào" },
       "merci": { en: "thank you", vi: "cảm ơn" },
@@ -89,27 +89,18 @@ const Index = () => {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <PhraseInput onAddPhrase={handleAddPhrase} />
+          <Navigation activeView={activeView} onViewChange={setActiveView} />
           
-          <div className="mt-8 space-y-4">
-            {isLoading ? (
-              <div className="text-center text-gray-500 py-8">Loading phrases...</div>
-            ) : phrases.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                No phrases added yet. Start by adding a French phrase above!
-              </div>
-            ) : (
-              phrases.map((phrase: PhraseRecord) => (
-                <PhraseCard
-                  key={phrase.id}
-                  french={phrase.french}
-                  english={phrase.english}
-                  vietnamese={phrase.vietnamese}
-                  onDelete={() => deleteMutation.mutate(phrase.id)}
-                />
-              ))
-            )}
-          </div>
+          {activeView === 'add' ? (
+            <div className="space-y-4">
+              <PhraseInput onAddPhrase={handleAddPhrase} />
+            </div>
+          ) : (
+            <HistoryView 
+              phrases={phrases} 
+              onDelete={(id) => deleteMutation.mutate(id)} 
+            />
+          )}
         </div>
       </div>
     </div>
