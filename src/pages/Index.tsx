@@ -59,11 +59,10 @@ const Index = () => {
   };
 
   const addPhraseMutation = useMutation({
-    mutationFn: (phraseData: { french: string; english: string; vietnamese: string }) => {
+    mutationFn: (phraseData: { french: string; translations: Record<Language, Translation> }) => {
       return savePhraseToDb({
         french: phraseData.french,
-        english: phraseData.english,
-        vietnamese: phraseData.vietnamese,
+        translations: phraseData.translations,
       });
     },
     onSuccess: () => {
@@ -105,10 +104,16 @@ const Index = () => {
     setTranslationResults(translations);
     
     translations.forEach(translation => {
+      const selectedTranslations = Object.entries(translation.translations)
+        .filter(([lang]) => languages.includes(lang as Language))
+        .reduce((acc, [lang, trans]) => ({
+          ...acc,
+          [lang]: trans
+        }), {} as Record<Language, Translation>);
+
       addPhraseMutation.mutate({
         french: translation.original,
-        english: translation.translations.english.text,
-        vietnamese: translation.translations.vietnamese.text,
+        translations: selectedTranslations,
       });
     });
   };

@@ -1,5 +1,5 @@
-
 import { createClient } from '@supabase/supabase-js';
+import type { Language, Translation } from '../types/language';
 
 // Default to empty strings if environment variables are not defined
 // This prevents the immediate error, but the client won't work without proper values
@@ -17,8 +17,7 @@ if (!supabaseUrl || !supabaseKey) {
 export interface PhraseRecord {
   id: number;
   french: string;
-  english: string;
-  vietnamese: string;
+  translations: Record<Language, Translation>;
   created_at: string;
 }
 

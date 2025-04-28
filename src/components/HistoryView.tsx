@@ -17,7 +17,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
   const [interval, setInterval] = useState<number>(30);
   const [isNotifying, setIsNotifying] = useState(false);
   const { toast } = useToast();
-  const timerRef = useRef<NodeJS.Timeout>();
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     if (isNotifying && phrases.length > 0) {
@@ -28,14 +28,14 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
           description: randomPhrase.french
         });
       }, interval * 60 * 1000);
+
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
     }
-    
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [isNotifying, interval, phrases]);
+  }, [isNotifying, interval, phrases, toast]);
 
   return (
     <div className="space-y-6">
