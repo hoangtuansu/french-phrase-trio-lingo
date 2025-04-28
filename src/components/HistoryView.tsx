@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "@/components/ui/card";
 import PhraseCard from './PhraseCard';
 import { Bell } from "lucide-react";
@@ -17,19 +16,23 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
   const [interval, setInterval] = useState<number>(30);
   const [isNotifying, setIsNotifying] = useState(false);
   const { toast } = useToast();
+  const timerRef = useRef<NodeJS.Timeout>();
   
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (isNotifying && phrases.length > 0) {
-      timer = setInterval(() => {
+      timerRef.current = setInterval(() => {
         const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
         toast({
-          title: "Practice Time!",
-          description: `${randomPhrase.french} - ${randomPhrase.english}`,
+          title: "Practice Time!"
         });
       }, interval * 60 * 1000); // Convert minutes to milliseconds
     }
-    return () => clearInterval(timer);
+    
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
   }, [isNotifying, interval, phrases]);
 
   return (

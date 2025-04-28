@@ -5,6 +5,7 @@ import HistoryView from '../components/HistoryView';
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPhrases, savePhraseToDb, deletePhrase, PhraseRecord } from '../utils/supabase';
+import type { Language, Translation } from '../types/language';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'add' | 'history'>('add');
@@ -17,25 +18,51 @@ const Index = () => {
   });
 
   const mockTranslate = (text: string) => {
-    const mockTranslations: Record<string, { en: string; vi: string }> = {
-      "bonjour": { en: "hello", vi: "xin chào" },
-      "merci": { en: "thank you", vi: "cảm ơn" },
-      "au revoir": { en: "goodbye", vi: "tạm biệt" },
-    };
+    // Simple mock for multiple languages and examples
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    const results = lines.map(line => {
+      const isWord = !line.includes(' ');
+      const mockData: Record<string, Translation> = {
+        english: {
+          text: `[English for: ${line}]`,
+          ...(isWord && {
+            examples: [
+              `Example 1 for ${line}`,
+              `Example 2 for ${line}`,
+            ],
+            idioms: [`Idiom using ${line}`]
+          })
+        },
+        vietnamese: {
+          text: `[Vietnamese for: ${line}]`
+        },
+        spanish: {
+          text: `[Spanish for: ${line}]`
+        },
+        german: {
+          text: `[German for: ${line}]`
+        },
+        italian: {
+          text: `[Italian for: ${line}]`
+        }
+      };
+      
+      return {
+        original: line,
+        translations: mockData
+      };
+    });
 
-    return mockTranslations[text.toLowerCase()] || { 
-      en: `[English translation for: ${text}]`, 
-      vi: `[Vietnamese translation for: ${text}]` 
-    };
+    return results;
   };
 
   const addPhraseMutation = useMutation({
-    mutationFn: (french: string) => {
-      const translations = mockTranslate(french);
+    mutationFn: (phraseData: { french: string; english: string; vietnamese: string }) => {
       return savePhraseToDb({
-        french,
-        english: translations.en,
-        vietnamese: translations.vi,
+        french: phraseData.french,
+        english: phraseData.english,
+        vietnamese: phraseData.vietnamese,
       });
     },
     onSuccess: () => {
@@ -72,8 +99,16 @@ const Index = () => {
     },
   });
 
-  const handleAddPhrase = (french: string) => {
-    addPhraseMutation.mutate(french);
+  const handleAddPhrase = (french: string, languages: Language[]) => {
+    const translations = mockTranslate(french);
+    
+    translations.forEach(translation => {
+      addPhraseMutation.mutate({
+        french: translation.original,
+        english: translation.translations.english.text,
+        vietnamese: translation.translations.vietnamese.text,
+      });
+    });
   };
 
   return (
