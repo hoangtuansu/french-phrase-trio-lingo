@@ -3,8 +3,13 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Languages } from "lucide-react";
+import { Languages, ChevronDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -35,12 +40,15 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   translationResults 
 }) => {
   const [phrase, setPhrase] = useState('');
+  const [openPhrases, setOpenPhrases] = useState<number[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (phrase.trim() && selectedLanguages.length > 0) {
       onAddPhrase(phrase.trim(), selectedLanguages);
       setPhrase('');
+      // Auto-open the first result when new translations arrive
+      setOpenPhrases([0]);
     }
   };
 
@@ -49,6 +57,14 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
       ? selectedLanguages.filter(l => l !== language)
       : [...selectedLanguages, language];
     onLanguagesChange(newSelection);
+  };
+
+  const togglePhrase = (index: number) => {
+    setOpenPhrases(current => 
+      current.includes(index)
+        ? current.filter(i => i !== index)
+        : [...current, index]
+    );
   };
 
   return (
@@ -99,49 +115,62 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
       </Card>
 
       {translationResults && translationResults.length > 0 && (
-        <Card className="p-6">
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-4">
-              {translationResults.map((result, index) => (
-                <div key={index} className="border-b pb-4 last:border-b-0">
-                  <div className="font-medium mb-2">{result.original}</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(result.translations).map(([lang, translation]) => (
-                      selectedLanguages.includes(lang as Language) && (
-                        <div key={lang} className="space-y-2">
-                          <div className="font-semibold text-gray-600">
-                            {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}:
-                          </div>
-                          <div>{translation.text}</div>
-                          {translation.examples && (
-                            <div className="ml-4">
-                              <div className="text-sm text-gray-500">Examples:</div>
-                              <ul className="list-disc list-inside">
-                                {translation.examples.map((example, i) => (
-                                  <li key={i} className="text-sm">{example}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          {translation.idioms && (
-                            <div className="ml-4">
-                              <div className="text-sm text-gray-500">Idioms:</div>
-                              <ul className="list-disc list-inside">
-                                {translation.idioms.map((idiom, i) => (
-                                  <li key={i} className="text-sm">{idiom}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    ))}
-                  </div>
+        <div className="space-y-2">
+          {translationResults.map((result, index) => (
+            <Card key={index} className="p-4">
+              <Collapsible
+                open={openPhrases.includes(index)}
+                onOpenChange={() => togglePhrase(index)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-medium text-french-blue">{result.original}</div>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="p-0 h-7 w-7">
+                      <ChevronDown className={`h-4 w-4 transition-transform ${openPhrases.includes(index) ? 'transform rotate-180' : ''}`} />
+                      <span className="sr-only">Toggle</span>
+                    </Button>
+                  </CollapsibleTrigger>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </Card>
+                <CollapsibleContent>
+                  <div className="pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                      {Object.entries(result.translations).map(([lang, translation]) => (
+                        selectedLanguages.includes(lang as Language) && (
+                          <div key={lang} className="space-y-2 p-2 border rounded-md">
+                            <div className="font-semibold text-gray-700">
+                              {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}:
+                            </div>
+                            <div>{translation.text}</div>
+                            {translation.examples && (
+                              <div className="ml-2">
+                                <div className="text-sm text-gray-500">Examples:</div>
+                                <ul className="list-disc list-inside">
+                                  {translation.examples.map((example, i) => (
+                                    <li key={i} className="text-sm">{example}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {translation.idioms && (
+                              <div className="ml-2">
+                                <div className="text-sm text-gray-500">Idioms:</div>
+                                <ul className="list-disc list-inside">
+                                  {translation.idioms.map((idiom, i) => (
+                                    <li key={i} className="text-sm">{idiom}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );

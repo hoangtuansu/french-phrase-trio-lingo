@@ -1,22 +1,33 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "@/components/ui/card";
-import PhraseCard from './PhraseCard';
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import type { PhraseRecord } from '../utils/supabase';
 import type { Language } from '../types/language';
 
 interface HistoryViewProps {
   phrases: PhraseRecord[];
   onDelete: (id: number) => void;
+  selectedLanguages: Language[];
 }
 
-const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
+const AVAILABLE_LANGUAGES = [
+  { value: 'english', label: 'English' },
+  { value: 'vietnamese', label: 'Vietnamese' },
+  { value: 'spanish', label: 'Spanish' },
+  { value: 'german', label: 'German' },
+  { value: 'italian', label: 'Italian' },
+];
+
+const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLanguages }) => {
   const [interval, setInterval] = useState<number>(30);
   const [isNotifying, setIsNotifying] = useState(false);
+  const [openPhrases, setOpenPhrases] = useState<number[]>([]);
   const { toast } = useToast();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -37,6 +48,14 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
       };
     }
   }, [isNotifying, interval, phrases, toast]);
+
+  const togglePhrase = (id: number) => {
+    setOpenPhrases(current => 
+      current.includes(id)
+        ? current.filter(i => i !== id)
+        : [...current, id]
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -59,15 +78,67 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete }) => {
           </Button>
         </div>
       </Card>
-      <div className="grid gap-4">
+      <div className="space-y-4">
         {phrases.map((phrase) => (
-          <PhraseCard
-            key={phrase.id}
-            french={phrase.french}
-            english={phrase.translations.english?.text || ""}
-            vietnamese={phrase.translations.vietnamese?.text || ""}
-            onDelete={() => onDelete(phrase.id)}
-          />
+          <Card key={phrase.id} className="p-4 relative group">
+            <Collapsible 
+              open={openPhrases.includes(phrase.id)}
+              onOpenChange={() => togglePhrase(phrase.id)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-french-blue">{phrase.french}</div>
+                <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0 mr-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(phrase.id);
+                    }}
+                  >
+                    <span className="sr-only">Delete</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-french-red"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
+                  </Button>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="p-0 h-7 w-7">
+                      <ChevronDown className={`h-4 w-4 transition-transform ${openPhrases.includes(phrase.id) ? 'transform rotate-180' : ''}`} />
+                      <span className="sr-only">Toggle</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+              <CollapsibleContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  {Object.entries(phrase.translations)
+                    .filter(([lang]) => selectedLanguages.includes(lang as Language))
+                    .map(([lang, translation]) => (
+                      <div key={lang} className="space-y-1">
+                        <div className="font-semibold text-gray-600">
+                          {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}:
+                        </div>
+                        <div>{translation.text}</div>
+                      </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
         ))}
       </div>
     </div>

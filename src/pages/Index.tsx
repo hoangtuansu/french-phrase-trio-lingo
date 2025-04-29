@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import PhraseInput from '../components/PhraseInput';
 import Navigation from '../components/Navigation';
@@ -60,9 +61,15 @@ const Index = () => {
 
   const addPhraseMutation = useMutation({
     mutationFn: (phraseData: { french: string; translations: Record<Language, Translation> }) => {
+      // Filter translations to only include selected languages
+      const filteredTranslations = Object.fromEntries(
+        Object.entries(phraseData.translations)
+          .filter(([lang]) => selectedLanguages.includes(lang as Language))
+      ) as Record<Language, Translation>;
+
       return savePhraseToDb({
         french: phraseData.french,
-        translations: phraseData.translations,
+        translations: filteredTranslations,
       });
     },
     onSuccess: () => {
@@ -72,7 +79,8 @@ const Index = () => {
         description: "Your phrase has been saved successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error saving phrase:", error);
       toast({
         title: "Error",
         description: "Failed to save phrase. Please try again.",
@@ -104,6 +112,7 @@ const Index = () => {
     setTranslationResults(translations);
     
     translations.forEach(translation => {
+      // Filter translations based on selected languages
       const selectedTranslations = Object.entries(translation.translations)
         .filter(([lang]) => languages.includes(lang as Language))
         .reduce((acc, [lang, trans]) => ({
@@ -144,6 +153,7 @@ const Index = () => {
             <HistoryView 
               phrases={phrases} 
               onDelete={(id) => deleteMutation.mutate(id)} 
+              selectedLanguages={selectedLanguages}
             />
           )}
         </div>
