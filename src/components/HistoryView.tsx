@@ -7,6 +7,12 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import type { PhraseRecord } from '../utils/supabase';
 import type { Language } from '../types/language';
 
@@ -29,11 +35,11 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
   const [isNotifying, setIsNotifying] = useState(false);
   const [openPhrases, setOpenPhrases] = useState<number[]>([]);
   const { toast } = useToast();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   useEffect(() => {
     if (isNotifying && phrases.length > 0) {
-      timerRef.current = global.setInterval(() => {
+      timerRef.current = setTimeout(() => {
         const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
         toast({
           title: "Practice Time!",
@@ -43,7 +49,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
 
       return () => {
         if (timerRef.current) {
-          clearInterval(timerRef.current);
+          clearTimeout(timerRef.current);
         }
       };
     }
@@ -124,17 +130,45 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
                 </div>
               </div>
               <CollapsibleContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  {Object.entries(phrase.translations)
-                    .filter(([lang]) => selectedLanguages.includes(lang as Language))
-                    .map(([lang, translation]) => (
-                      <div key={lang} className="space-y-1">
-                        <div className="font-semibold text-gray-600">
-                          {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}:
-                        </div>
-                        <div>{translation.text}</div>
-                      </div>
-                  ))}
+                <div className="mt-4">
+                  <Accordion type="single" collapsible className="w-full">
+                    {Object.entries(phrase.translations)
+                      .filter(([lang]) => selectedLanguages.includes(lang as Language))
+                      .map(([lang, translation]) => (
+                        <AccordionItem key={lang} value={lang}>
+                          <AccordionTrigger className="hover:no-underline py-2">
+                            <span className="font-semibold text-gray-600">
+                              {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}
+                            </span>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-2 p-2">
+                              <div>{translation.text}</div>
+                              {translation.examples && (
+                                <div className="ml-2">
+                                  <div className="text-sm text-gray-500">Examples:</div>
+                                  <ul className="list-disc list-inside">
+                                    {translation.examples.map((example, i) => (
+                                      <li key={i} className="text-sm">{example}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {translation.idioms && (
+                                <div className="ml-2">
+                                  <div className="text-sm text-gray-500">Idioms:</div>
+                                  <ul className="list-disc list-inside">
+                                    {translation.idioms.map((idiom, i) => (
+                                      <li key={i} className="text-sm">{idiom}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                  </Accordion>
                 </div>
               </CollapsibleContent>
             </Collapsible>

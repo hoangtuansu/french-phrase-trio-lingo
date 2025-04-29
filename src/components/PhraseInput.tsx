@@ -16,6 +16,12 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import type { Language, TranslationResult } from '../types/language';
 
 interface PhraseInputProps {
@@ -133,38 +139,44 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
                 </div>
                 <CollapsibleContent>
                   <div className="pt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                      {Object.entries(result.translations).map(([lang, translation]) => (
-                        selectedLanguages.includes(lang as Language) && (
-                          <div key={lang} className="space-y-2 p-2 border rounded-md">
-                            <div className="font-semibold text-gray-700">
-                              {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}:
-                            </div>
-                            <div>{translation.text}</div>
-                            {translation.examples && (
-                              <div className="ml-2">
-                                <div className="text-sm text-gray-500">Examples:</div>
-                                <ul className="list-disc list-inside">
-                                  {translation.examples.map((example, i) => (
-                                    <li key={i} className="text-sm">{example}</li>
-                                  ))}
-                                </ul>
+                    <Accordion type="single" collapsible className="w-full">
+                      {Object.entries(result.translations)
+                        .filter(([lang]) => selectedLanguages.includes(lang as Language))
+                        .map(([lang, translation]) => (
+                          <AccordionItem key={lang} value={lang}>
+                            <AccordionTrigger className="hover:no-underline py-2">
+                              <span className="font-semibold text-gray-700">
+                                {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}
+                              </span>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2 p-2">
+                                <div>{translation.text}</div>
+                                {translation.examples && (
+                                  <div className="ml-2">
+                                    <div className="text-sm text-gray-500">Examples:</div>
+                                    <ul className="list-disc list-inside">
+                                      {translation.examples.map((example, i) => (
+                                        <li key={i} className="text-sm">{example}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {translation.idioms && (
+                                  <div className="ml-2">
+                                    <div className="text-sm text-gray-500">Idioms:</div>
+                                    <ul className="list-disc list-inside">
+                                      {translation.idioms.map((idiom, i) => (
+                                        <li key={i} className="text-sm">{idiom}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            {translation.idioms && (
-                              <div className="ml-2">
-                                <div className="text-sm text-gray-500">Idioms:</div>
-                                <ul className="list-disc list-inside">
-                                  {translation.idioms.map((idiom, i) => (
-                                    <li key={i} className="text-sm">{idiom}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      ))}
-                    </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                    </Accordion>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
