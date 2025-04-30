@@ -39,41 +39,46 @@ const Index = () => {
   });
 
   const mockTranslate = (text: string) => {
-    const lines = text.split('\n').filter(line => line.trim());
-    
-    const results = lines.map(line => {
-      const isWord = !line.includes(' ');
-      const mockData: Record<Language, Translation> = {
+    // Instead of splitting by line, treat the whole text as one unit
+    const results: TranslationResult[] = [{
+      original: text,
+      translations: {
         english: {
-          text: `[English for: ${line}]`,
-          ...(isWord && {
-            examples: [
-              `Example 1 for ${line}`,
-              `Example 2 for ${line}`,
-            ],
-            idioms: [`Idiom using ${line}`]
-          })
+          text: `[English for: ${text}]`,
+          examples: [
+            `Example 1 for the text`,
+            `Example 2 for the text`,
+          ],
+          idioms: [`Idiom related to the text`]
         },
         vietnamese: {
-          text: `[Vietnamese for: ${line}]`
+          text: `[Vietnamese for: ${text}]`,
+          examples: [
+            `Vietnamese example 1`,
+            `Vietnamese example 2`,
+          ],
+          idioms: [`Vietnamese idiom`]
         },
         spanish: {
-          text: `[Spanish for: ${line}]`
+          text: `[Spanish for: ${text}]`,
+          examples: [
+            `Spanish example`
+          ],
+          idioms: []
         },
         german: {
-          text: `[German for: ${line}]`
+          text: `[German for: ${text}]`,
+          examples: [],
+          idioms: []
         },
         italian: {
-          text: `[Italian for: ${line}]`
+          text: `[Italian for: ${text}]`,
+          examples: [],
+          idioms: []
         }
-      };
-      
-      return {
-        original: line,
-        translations: mockData
-      };
-    });
-
+      }
+    }];
+    
     return results;
   };
 
@@ -126,10 +131,7 @@ const Index = () => {
   });
 
   const handleAddPhrase = (french: string, languages: Language[]) => {
-    // Clear previous translations before adding new ones
-    setTranslationResults(null);
-    
-    // Then set the new translations
+    // Clear previous translations and set the new translations
     const translations = mockTranslate(french);
     setTranslationResults(translations);
     
