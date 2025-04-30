@@ -34,8 +34,16 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
   const [interval, setInterval] = useState<number>(30);
   const [isNotifying, setIsNotifying] = useState(false);
   const [openPhrases, setOpenPhrases] = useState<number[]>([]);
+  const [expandedLanguages, setExpandedLanguages] = useState<string[]>([]);
   const { toast } = useToast();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  useEffect(() => {
+    // Set the first language as expanded by default
+    if (selectedLanguages.length > 0) {
+      setExpandedLanguages([selectedLanguages[0]]);
+    }
+  }, [selectedLanguages]);
   
   useEffect(() => {
     if (isNotifying && phrases.length > 0) {
@@ -131,7 +139,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
               </div>
               <CollapsibleContent>
                 <div className="mt-4">
-                  <Accordion type="single" collapsible className="w-full">
+                  <Accordion 
+                    type="multiple" 
+                    value={expandedLanguages}
+                    onValueChange={setExpandedLanguages}
+                    className="w-full"
+                  >
                     {Object.entries(phrase.translations)
                       .filter(([lang]) => selectedLanguages.includes(lang as Language))
                       .map(([lang, translation]) => (

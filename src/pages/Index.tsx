@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import PhraseInput from '../components/PhraseInput';
 import Navigation from '../components/Navigation';
@@ -7,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPhrases, savePhraseToDb, deletePhrase } from '../utils/supabase';
 import type { Language, Translation, TranslationResult } from '../types/language';
+import { Globe } from "lucide-react";
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'add' | 'history'>('add');
@@ -129,17 +129,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-8 px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-french-blue mb-2">
+      <div className="container mx-auto py-4 px-4">
+        <div className="flex items-center justify-center mb-4">
+          <Globe className="text-french-blue w-6 h-6 mr-2" />
+          <h1 className="text-xl font-bold text-french-blue">
             French Phrase Translator
           </h1>
-          <p className="text-gray-600">
-            Save French phrases and get instant translations
-          </p>
         </div>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <Navigation activeView={activeView} onViewChange={setActiveView} />
           
           {activeView === 'add' ? (
