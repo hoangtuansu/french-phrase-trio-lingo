@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PhraseInput from '../components/PhraseInput';
 import Navigation from '../components/Navigation';
 import HistoryView from '../components/HistoryView';
@@ -16,11 +16,22 @@ import {
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'add' | 'history'>('add');
-  const [selectedLanguages, setSelectedLanguages] = useState<Language[]>(['english', 'vietnamese']);
-  const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
   const [isTitleCollapsed, setIsTitleCollapsed] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Initialize selectedLanguages from localStorage or default to english and vietnamese
+  const [selectedLanguages, setSelectedLanguages] = useState<Language[]>(() => {
+    const savedLanguages = localStorage.getItem('selectedLanguages');
+    return savedLanguages ? JSON.parse(savedLanguages) : ['english', 'vietnamese'];
+  });
+
+  const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
+
+  // Save selectedLanguages to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('selectedLanguages', JSON.stringify(selectedLanguages));
+  }, [selectedLanguages]);
 
   const { data: phrases = [], isLoading } = useQuery({
     queryKey: ['phrases'],
@@ -150,13 +161,15 @@ const Index = () => {
             <div className="flex items-center">
               <Globe className="text-french-blue w-5 h-5 mr-2" />
               <h1 className="text-lg font-bold text-french-blue">
-                French Phrase Translator
+                Translator
               </h1>
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <p className="text-center text-sm text-gray-500 mt-1">
-              Save French phrases and get instant translations
+              {selectedLanguages.map(lang => 
+                lang.charAt(0).toUpperCase() + lang.slice(1)
+              ).join(' • ')}
             </p>
           </CollapsibleContent>
         </Collapsible>
