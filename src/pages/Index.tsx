@@ -115,6 +115,10 @@ const Index = () => {
   });
 
   const handleAddPhrase = (french: string, languages: Language[]) => {
+    // Clear previous translations before adding new ones
+    setTranslationResults(null);
+    
+    // Then set the new translations
     const translations = mockTranslate(french);
     setTranslationResults(translations);
     

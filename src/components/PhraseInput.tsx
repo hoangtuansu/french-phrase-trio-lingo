@@ -60,7 +60,6 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
     e.preventDefault();
     if (phrase.trim() && selectedLanguages.length > 0) {
       onAddPhrase(phrase.trim(), selectedLanguages);
-      // Don't clear the phrase input anymore
       // Auto-open the first result when new translations arrive
       setOpenPhrases([0]);
     }
@@ -87,8 +86,8 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Card className="p-6 bg-white shadow-lg">
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <Card className="p-6 bg-white shadow-lg h-[450px]">
+        <form onSubmit={handleSubmit} className="space-y-4 h-full flex flex-col">
           <div className="flex items-center space-x-2">
             <Languages className="w-5 h-5 text-french-blue" />
             <h2 className="text-xl font-semibold text-french-blue">Add French Phrases</h2>
@@ -118,13 +117,13 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
             </DropdownMenu>
           </div>
 
-          <div className="space-y-2">
-            <div className="relative">
+          <div className="space-y-2 flex-grow">
+            <div className="relative h-full flex flex-col">
               <Textarea
                 value={phrase}
                 onChange={(e) => setPhrase(e.target.value)}
                 placeholder="Enter French phrases (one per line)..."
-                className="min-h-[150px] pr-10"
+                className="min-h-[150px] pr-10 flex-grow"
               />
               {phrase && (
                 <Button
@@ -139,16 +138,17 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
                 </Button>
               )}
             </div>
-            <Button type="submit" className="w-full bg-french-blue hover:bg-blue-800">
-              Translate
-            </Button>
           </div>
+          
+          <Button type="submit" className="w-full bg-french-blue hover:bg-blue-800">
+            Translate
+          </Button>
         </form>
       </Card>
 
-      {translationResults && translationResults.length > 0 && (
-        <Card className="p-4 bg-white shadow-lg max-h-[450px] overflow-auto">
-          <ScrollArea className="h-full">
+      {translationResults && translationResults.length > 0 ? (
+        <Card className="p-4 bg-white shadow-lg h-[450px]">
+          <ScrollArea className="h-full pr-4">
             <div className="space-y-2">
               {translationResults.map((result, index) => (
                 <Card key={index} className="p-4">
@@ -214,6 +214,13 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
               ))}
             </div>
           </ScrollArea>
+        </Card>
+      ) : (
+        <Card className="p-4 bg-white shadow-lg h-[450px] flex items-center justify-center text-gray-500">
+          <div className="text-center">
+            <p>No translations yet</p>
+            <p className="text-sm">Enter a French phrase and click Translate</p>
+          </div>
         </Card>
       )}
     </div>
