@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import PhraseInput from '../components/PhraseInput';
 import Navigation from '../components/Navigation';
@@ -7,11 +8,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPhrases, savePhraseToDb, deletePhrase } from '../utils/supabase';
 import type { Language, Translation, TranslationResult } from '../types/language';
 import { Globe } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'add' | 'history'>('add');
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>(['english', 'vietnamese']);
   const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
+  const [isTitleCollapsed, setIsTitleCollapsed] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -130,12 +137,25 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-4 px-4">
-        <div className="flex items-center justify-center mb-4">
-          <Globe className="text-french-blue w-6 h-6 mr-2" />
-          <h1 className="text-xl font-bold text-french-blue">
-            French Phrase Translator
-          </h1>
-        </div>
+        <Collapsible
+          open={!isTitleCollapsed}
+          onOpenChange={(isOpen) => setIsTitleCollapsed(!isOpen)}
+          className="mb-4"
+        >
+          <CollapsibleTrigger className="w-full flex items-center justify-center cursor-pointer">
+            <div className="flex items-center">
+              <Globe className="text-french-blue w-5 h-5 mr-2" />
+              <h1 className="text-lg font-bold text-french-blue">
+                French Phrase Translator
+              </h1>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <p className="text-center text-sm text-gray-500 mt-1">
+              Save French phrases and get instant translations
+            </p>
+          </CollapsibleContent>
+        </Collapsible>
 
         <div className="max-w-4xl mx-auto">
           <Navigation activeView={activeView} onViewChange={setActiveView} />
