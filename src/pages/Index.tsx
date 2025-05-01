@@ -6,7 +6,7 @@ import HistoryView from '../components/HistoryView';
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPhrases, savePhraseToDb, deletePhrase } from '../utils/supabase';
-import type { Language, Translation, TranslationResult } from '../types/language';
+import type { Language, Translation, TranslationResult, TranslationMode } from '../types/language';
 import { Globe } from "lucide-react";
 import {
   Collapsible,
@@ -39,52 +39,12 @@ const Index = () => {
     queryFn: getPhrases,
   });
 
-  const mockTranslate = (text: string) => {
-    // Instead of splitting by line, treat the whole text as one unit
-    const results: TranslationResult[] = [{
-      original: text,
-      translations: {
-        english: {
-          text: `[English for: ${text}]`,
-          examples: [
-            `Example 1 for the text`,
-            `Example 2 for the text`,
-          ],
-          idioms: [`Idiom related to the text`]
-        },
-        vietnamese: {
-          text: `[Vietnamese for: ${text}]`,
-          examples: [
-            `Vietnamese example 1`,
-            `Vietnamese example 2`,
-          ],
-          idioms: [`Vietnamese idiom`]
-        },
-        spanish: {
-          text: `[Spanish for: ${text}]`,
-          examples: [
-            `Spanish example`
-          ],
-          idioms: []
-        },
-        german: {
-          text: `[German for: ${text}]`,
-          examples: [],
-          idioms: []
-        },
-        italian: {
-          text: `[Italian for: ${text}]`,
-          examples: [],
-          idioms: []
-        }
-      }
-    }];
-    
-    return results;
-  };
-
   const addPhraseMutation = useMutation({
-    mutationFn: (phraseData: { french: string; translations: Record<Language, Translation> }) => {
+    mutationFn: (phraseData: { 
+      french: string; 
+      translations: Record<Language, Translation>;
+      mode: TranslationMode;
+    }) => {
       // Filter translations to only include selected languages
       const filteredTranslations = Object.fromEntries(
         Object.entries(phraseData.translations)
@@ -94,6 +54,7 @@ const Index = () => {
       return savePhraseToDb({
         french: phraseData.french,
         translations: filteredTranslations,
+        mode: phraseData.mode,
       });
     },
     onSuccess: () => {
@@ -131,9 +92,77 @@ const Index = () => {
     },
   });
 
-  const handleAddPhrase = (french: string, languages: Language[]) => {
+  const mockTranslate = (text: string, mode: TranslationMode) => {
+    // Instead of splitting by line, treat the whole text as one unit
+    const results: TranslationResult[] = [{
+      original: text,
+      translations: {
+        english: {
+          text: `[English for: ${text}]`,
+          examples: mode !== 'simple' ? [
+            `Example 1 for the text`,
+            `Example 2 for the text`,
+          ] : [],
+          idioms: mode !== 'simple' ? [`Idiom related to the text`] : [],
+          grammarNotes: mode === 'learning' ? [
+            `In English, this sentence uses the present tense.`,
+            `Note the adjective placement in English comes before the noun.`
+          ] : []
+        },
+        vietnamese: {
+          text: `[Vietnamese for: ${text}]`,
+          examples: mode !== 'simple' ? [
+            `Vietnamese example 1`,
+            `Vietnamese example 2`,
+          ] : [],
+          idioms: mode !== 'simple' ? [`Vietnamese idiom`] : [],
+          grammarNotes: mode === 'learning' ? [
+            `Vietnamese grammar typically follows Subject-Verb-Object order.`,
+            `Vietnamese nouns don't change form for plural.`
+          ] : []
+        },
+        spanish: {
+          text: `[Spanish for: ${text}]`,
+          examples: mode !== 'simple' ? [
+            `Spanish example`
+          ] : [],
+          idioms: mode !== 'simple' ? [`Spanish idiom for daily use`] : [],
+          grammarNotes: mode === 'learning' ? [
+            `In Spanish, adjectives typically follow the noun.`,
+            `Spanish verbs are conjugated based on the subject.`
+          ] : []
+        },
+        german: {
+          text: `[German for: ${text}]`,
+          examples: mode !== 'simple' ? [
+            `German example sentence`
+          ] : [],
+          idioms: mode !== 'simple' ? [`Common German expression`] : [],
+          grammarNotes: mode === 'learning' ? [
+            `German nouns always start with a capital letter.`,
+            `German has three grammatical genders: masculine, feminine, and neuter.`
+          ] : []
+        },
+        italian: {
+          text: `[Italian for: ${text}]`,
+          examples: mode !== 'simple' ? [
+            `Italian example for context`
+          ] : [],
+          idioms: mode !== 'simple' ? [`Popular Italian saying`] : [],
+          grammarNotes: mode === 'learning' ? [
+            `Italian adjectives usually agree in gender and number with the noun.`,
+            `In Italian, the subject pronoun is often omitted.`
+          ] : []
+        }
+      }
+    }];
+    
+    return results;
+  };
+
+  const handleAddPhrase = (french: string, languages: Language[], mode: TranslationMode) => {
     // Clear previous translations and set the new translations
-    const translations = mockTranslate(french);
+    const translations = mockTranslate(french, mode);
     setTranslationResults(translations);
     setInputText(french);
     
@@ -149,6 +178,7 @@ const Index = () => {
       addPhraseMutation.mutate({
         french: translation.original,
         translations: selectedTranslations,
+        mode: mode
       });
     });
   };
