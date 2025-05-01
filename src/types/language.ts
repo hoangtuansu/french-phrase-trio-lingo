@@ -14,4 +14,3 @@ export interface TranslationResult {
   original: string;
   translations: Record<Language, Translation>;
 }
-

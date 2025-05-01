@@ -1,28 +1,48 @@
+
 import { createClient } from '@supabase/supabase-js';
-import type { Language, Translation } from '../types/language';
+import type { Language, Translation, TranslationMode } from '../types/language';
 
 // Default to empty strings if environment variables are not defined
-// This prevents the immediate error, but the client won't work without proper values
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Create the Supabase client with error handling
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Create a mock client when credentials are missing to prevent runtime errors
+const isMissingCredentials = !supabaseUrl || !supabaseKey;
 
-// Check if Supabase configuration is missing and log a helpful error
-if (!supabaseUrl || !supabaseKey) {
+// Log warning about missing configuration
+if (isMissingCredentials) {
   console.error('⚠️ Supabase configuration missing! Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+}
+
+// Create the Supabase client only if we have valid credentials
+export const supabase = isMissingCredentials
+  ? createMockClient()
+  : createClient(supabaseUrl, supabaseKey);
+
+// Mock client factory to prevent runtime errors
+function createMockClient() {
+  const mockResponse = { data: null, error: new Error('Supabase configuration is missing') };
+  
+  return {
+    from: () => ({
+      insert: () => ({ select: () => ({ single: () => Promise.resolve(mockResponse) }) }),
+      select: () => ({ order: () => Promise.resolve(mockResponse) }),
+      delete: () => ({ eq: () => Promise.resolve(mockResponse) }),
+    }),
+    // Add other methods as needed to prevent runtime errors
+  };
 }
 
 export interface PhraseRecord {
   id: number;
   french: string;
   translations: Record<Language, Translation>;
+  mode: TranslationMode;
   created_at: string;
 }
 
 export const savePhraseToDb = async (phrase: Omit<PhraseRecord, 'id' | 'created_at'>) => {
-  if (!supabaseUrl || !supabaseKey) {
+  if (isMissingCredentials) {
     throw new Error('Supabase configuration is missing. Please set the required environment variables.');
   }
 
@@ -37,8 +57,9 @@ export const savePhraseToDb = async (phrase: Omit<PhraseRecord, 'id' | 'created_
 };
 
 export const getPhrases = async () => {
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+  if (isMissingCredentials) {
+    console.warn('Supabase configuration missing. Returning mock data.');
+    return [];
   }
 
   const { data, error } = await supabase
@@ -51,7 +72,7 @@ export const getPhrases = async () => {
 };
 
 export const deletePhrase = async (id: number) => {
-  if (!supabaseUrl || !supabaseKey) {
+  if (isMissingCredentials) {
     throw new Error('Supabase configuration is missing. Please set the required environment variables.');
   }
 
