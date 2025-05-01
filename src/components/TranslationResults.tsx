@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown } from "lucide-react";
@@ -29,6 +29,10 @@ const TranslationResults: React.FC<TranslationResultsProps> = ({
   translationResults, 
   selectedLanguages 
 }) => {
+  const [openLanguages, setOpenLanguages] = useState<string[]>(
+    selectedLanguages.length > 0 ? [selectedLanguages[0]] : []
+  );
+
   // Format by language instead of by phrase
   const getTranslationsByLanguage = () => {
     if (!translationResults || translationResults.length === 0) return {};
@@ -63,8 +67,11 @@ const TranslationResults: React.FC<TranslationResultsProps> = ({
     return byLanguage;
   };
 
+  const handleValueChange = (value: string[]) => {
+    setOpenLanguages(value);
+  };
+
   const translationsByLanguage = getTranslationsByLanguage();
-  const expandedLanguages = selectedLanguages.length > 0 ? [selectedLanguages[0]] : [];
 
   if (!translationResults || translationResults.length === 0) {
     return (
@@ -83,8 +90,8 @@ const TranslationResults: React.FC<TranslationResultsProps> = ({
         <div className="space-y-2">
           <Accordion 
             type="multiple" 
-            value={expandedLanguages}
-            defaultValue={expandedLanguages}
+            value={openLanguages}
+            onValueChange={handleValueChange}
             className="w-full"
           >
             {selectedLanguages.map(lang => {

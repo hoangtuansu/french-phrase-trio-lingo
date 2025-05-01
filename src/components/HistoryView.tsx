@@ -33,15 +33,15 @@ const AVAILABLE_LANGUAGES = [
 const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLanguages }) => {
   const [interval, setInterval] = useState<number>(30);
   const [isNotifying, setIsNotifying] = useState(false);
-  const [openPhrases, setOpenPhrases] = useState<number[]>([]);
-  const [expandedLanguages, setExpandedLanguages] = useState<string[]>([]);
+  const [openPhrases, setOpenPhrases] = useState<string[]>([]);
+  const [openLanguages, setOpenLanguages] = useState<string[]>([]);
   const { toast } = useToast();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   useEffect(() => {
     // Set the first language as expanded by default
     if (selectedLanguages.length > 0) {
-      setExpandedLanguages([selectedLanguages[0]]);
+      setOpenLanguages([selectedLanguages[0]]);
     }
   }, [selectedLanguages]);
   
@@ -63,16 +63,19 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
     }
   }, [isNotifying, interval, phrases, toast]);
 
-  const togglePhrase = (id: number) => {
-    setOpenPhrases(current => 
-      current.includes(id)
-        ? current.filter(i => i !== id)
-        : [...current, id]
-    );
+  const handlePhraseOpenChange = (isOpen: boolean, id: number) => {
+    const phraseId = `phrase-${id}`;
+    setOpenPhrases(prev => {
+      if (isOpen) {
+        return [...prev, phraseId];
+      } else {
+        return prev.filter(item => item !== phraseId);
+      }
+    });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-[calc(100vh-200px)] overflow-auto">
       <Card className="p-4">
         <div className="flex items-center gap-4">
           <Input
@@ -96,8 +99,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
         {phrases.map((phrase) => (
           <Card key={phrase.id} className="p-4 relative group">
             <Collapsible 
-              open={openPhrases.includes(phrase.id)}
-              onOpenChange={() => togglePhrase(phrase.id)}
+              open={openPhrases.includes(`phrase-${phrase.id}`)}
+              onOpenChange={(isOpen) => handlePhraseOpenChange(isOpen, phrase.id)}
             >
               <div className="flex items-center justify-between">
                 <div className="font-medium text-french-blue">{phrase.french}</div>
@@ -131,7 +134,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
                   </Button>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="p-0 h-7 w-7">
-                      <ChevronDown className={`h-4 w-4 transition-transform ${openPhrases.includes(phrase.id) ? 'transform rotate-180' : ''}`} />
+                      <ChevronDown className={`h-4 w-4 transition-transform ${openPhrases.includes(`phrase-${phrase.id}`) ? 'transform rotate-180' : ''}`} />
                       <span className="sr-only">Toggle</span>
                     </Button>
                   </CollapsibleTrigger>
@@ -141,8 +144,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
                 <div className="mt-4">
                   <Accordion 
                     type="multiple" 
-                    value={expandedLanguages}
-                    onValueChange={setExpandedLanguages}
+                    value={openLanguages}
+                    onValueChange={setOpenLanguages}
                     className="w-full"
                   >
                     {Object.entries(phrase.translations)
