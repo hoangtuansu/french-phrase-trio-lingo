@@ -97,13 +97,13 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
       </Card>
       <div className="space-y-4">
         {phrases.map((phrase) => (
-          <Card key={phrase.id} className="p-4 relative group">
+          <Card key={phrase.id} className="p-4 relative group cursor-pointer" onClick={() => handlePhraseOpenChange(!openPhrases.includes(`phrase-${phrase.id}`), phrase.id)}>
             <Collapsible 
               open={openPhrases.includes(`phrase-${phrase.id}`)}
               onOpenChange={(isOpen) => handlePhraseOpenChange(isOpen, phrase.id)}
             >
               <div className="flex items-center justify-between">
-                <div className="font-medium text-french-blue">{phrase.french}</div>
+                <div className="font-medium text-french-blue w-full">{phrase.french}</div>
                 <div className="flex items-center">
                   <Button
                     variant="ghost"
@@ -132,7 +132,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
                       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                     </svg>
                   </Button>
-                  <CollapsibleTrigger asChild>
+                  <CollapsibleTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="sm" className="p-0 h-7 w-7">
                       <ChevronDown className={`h-4 w-4 transition-transform ${openPhrases.includes(`phrase-${phrase.id}`) ? 'transform rotate-180' : ''}`} />
                       <span className="sr-only">Toggle</span>

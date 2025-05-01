@@ -27,6 +27,7 @@ const Index = () => {
   });
 
   const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
+  const [inputText, setInputText] = useState<string>('');
 
   // Save selectedLanguages to localStorage whenever it changes
   useEffect(() => {
@@ -134,6 +135,7 @@ const Index = () => {
     // Clear previous translations and set the new translations
     const translations = mockTranslate(french);
     setTranslationResults(translations);
+    setInputText(french);
     
     translations.forEach(translation => {
       // Filter translations based on selected languages
@@ -185,6 +187,8 @@ const Index = () => {
               selectedLanguages={selectedLanguages}
               onLanguagesChange={setSelectedLanguages}
               translationResults={translationResults}
+              inputText={inputText}
+              onInputTextChange={setInputText}
             />
           ) : (
             <HistoryView 

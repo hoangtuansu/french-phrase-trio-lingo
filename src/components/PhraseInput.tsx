@@ -18,6 +18,8 @@ interface PhraseInputProps {
   selectedLanguages: Language[];
   onLanguagesChange: (languages: Language[]) => void;
   translationResults: TranslationResult[] | null;
+  inputText: string;
+  onInputTextChange: (text: string) => void;
 }
 
 const AVAILABLE_LANGUAGES: { value: Language; label: string }[] = [
@@ -32,19 +34,20 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   onAddPhrase, 
   selectedLanguages,
   onLanguagesChange,
-  translationResults 
+  translationResults,
+  inputText,
+  onInputTextChange
 }) => {
-  const [phrase, setPhrase] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phrase.trim() && selectedLanguages.length > 0) {
-      onAddPhrase(phrase.trim(), selectedLanguages);
+    if (inputText.trim() && selectedLanguages.length > 0) {
+      onAddPhrase(inputText.trim(), selectedLanguages);
     }
   };
 
   const clearPhrase = () => {
-    setPhrase('');
+    onInputTextChange('');
   };
 
   const toggleLanguage = (language: Language) => {
@@ -90,12 +93,12 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
           <div className="space-y-2 flex-grow">
             <div className="relative h-full flex flex-col">
               <Textarea
-                value={phrase}
-                onChange={(e) => setPhrase(e.target.value)}
+                value={inputText}
+                onChange={(e) => onInputTextChange(e.target.value)}
                 placeholder="Enter phrases (one per line)..."
                 className="min-h-[150px] pr-10 flex-grow"
               />
-              {phrase && (
+              {inputText && (
                 <Button
                   type="button"
                   variant="ghost"
