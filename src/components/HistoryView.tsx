@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "@/components/ui/card";
-import { Bell } from "lucide-react";
+import { FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type { PhraseRecord } from '../utils/supabase';
 import type { Language } from '../types/language';
 
@@ -31,12 +39,12 @@ const AVAILABLE_LANGUAGES = [
 ];
 
 const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLanguages }) => {
-  const [interval, setInterval] = useState<number>(30);
-  const [isNotifying, setIsNotifying] = useState(false);
+  const [days, setDays] = useState<number>(7);
   const [openPhrases, setOpenPhrases] = useState<string[]>([]);
   const [openLanguages, setOpenLanguages] = useState<string[]>([]);
+  const [randomPhrase, setRandomPhrase] = useState<PhraseRecord | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   useEffect(() => {
     // Set the first language as expanded by default
@@ -45,23 +53,41 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
     }
   }, [selectedLanguages]);
   
-  useEffect(() => {
-    if (isNotifying && phrases.length > 0) {
-      timerRef.current = setTimeout(() => {
-        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-        toast({
-          title: "Practice Time!",
-          description: randomPhrase.french
-        });
-      }, interval * 60 * 1000);
-
-      return () => {
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-        }
-      };
+  const getRandomPhrase = () => {
+    if (phrases.length === 0) return null;
+    
+    // Filter phrases from the last n days if specified
+    let filteredPhrases = phrases;
+    if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      filteredPhrases = phrases.filter(phrase => {
+        // This assumes phrases have a created_at field. If not, you'll need to adapt this.
+        const createdAt = phrase.created_at ? new Date(phrase.created_at) : new Date();
+        return createdAt >= cutoffDate;
+      });
     }
-  }, [isNotifying, interval, phrases, toast]);
+    
+    if (filteredPhrases.length === 0) {
+      toast({
+        title: "No phrases found",
+        description: `No phrases found within the last ${days} days.`,
+      });
+      return null;
+    }
+    
+    // Select a random phrase from the filtered list
+    return filteredPhrases[Math.floor(Math.random() * filteredPhrases.length)];
+  };
+
+  const handleShowRandomPhrase = () => {
+    const phrase = getRandomPhrase();
+    if (phrase) {
+      setRandomPhrase(phrase);
+      setIsDialogOpen(true);
+    }
+  };
 
   const handlePhraseOpenChange = (isOpen: boolean, id: number) => {
     const phraseId = `phrase-${id}`;
@@ -80,21 +106,88 @@ const HistoryView: React.FC<HistoryViewProps> = ({ phrases, onDelete, selectedLa
         <div className="flex items-center gap-4">
           <Input
             type="number"
-            value={interval}
-            onChange={(e) => setInterval(Number(e.target.value))}
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
             min={1}
             className="w-24"
           />
-          <span className="text-sm text-gray-500">minutes</span>
+          <span className="text-sm text-gray-500">days</span>
           <Button 
-            onClick={() => setIsNotifying(!isNotifying)}
-            variant={isNotifying ? "default" : "outline"}
+            onClick={handleShowRandomPhrase}
+            variant="outline"
           >
-            <Bell className="w-4 h-4 mr-2" />
-            {isNotifying ? "Stop Notifications" : "Start Notifications"}
+            <FileText className="w-4 h-4 mr-2" />
+            Show Random Phrase
           </Button>
         </div>
       </Card>
+      
+      {/* Random Phrase Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Random Phrase</DialogTitle>
+            <DialogDescription>
+              A randomly selected phrase from your history within the last {days} days.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {randomPhrase && (
+            <div className="space-y-4 mt-2">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-semibold text-french-blue">{randomPhrase.french}</div>
+              </div>
+              
+              <Accordion type="single" collapsible className="w-full">
+                {Object.entries(randomPhrase.translations)
+                  .filter(([lang]) => selectedLanguages.includes(lang as Language))
+                  .map(([lang, translation]) => (
+                    <AccordionItem key={lang} value={lang}>
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <span className="font-medium text-gray-600">
+                          {AVAILABLE_LANGUAGES.find(l => l.value === lang)?.label}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-2 p-2">
+                          <div>{translation.text}</div>
+                          {translation.examples && translation.examples.length > 0 && (
+                            <div className="ml-2">
+                              <div className="text-sm text-gray-500">Examples:</div>
+                              <ul className="list-disc list-inside">
+                                {translation.examples.map((example, i) => (
+                                  <li key={i} className="text-sm">{example}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {translation.idioms && translation.idioms.length > 0 && (
+                            <div className="ml-2">
+                              <div className="text-sm text-gray-500">Idioms:</div>
+                              <ul className="list-disc list-inside">
+                                {translation.idioms.map((idiom, i) => (
+                                  <li key={i} className="text-sm">{idiom}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+              </Accordion>
+              
+              <div className="flex justify-end">
+                <Button onClick={() => setIsDialogOpen(false)} className="mr-2">Close</Button>
+                <Button onClick={handleShowRandomPhrase} variant="outline">
+                  Show Another
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
       <div className="space-y-4">
         {phrases.map((phrase) => (
           <Card key={phrase.id} className="p-4 relative group cursor-pointer" onClick={() => handlePhraseOpenChange(!openPhrases.includes(`phrase-${phrase.id}`), phrase.id)}>
