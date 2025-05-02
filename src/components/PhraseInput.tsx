@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -88,6 +89,7 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   
   const clearPastedImage = () => {
     setPastedImage(null);
+    setExtractedText(''); // Clear extracted text when image is removed
   };
 
   const mockExtractTextFromImage = async (file: File): Promise<string> => {
