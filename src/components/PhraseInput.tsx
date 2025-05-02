@@ -1,10 +1,15 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Languages, X, Image as ImageIcon } from "lucide-react";
 import TranslationResults from './TranslationResults';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -53,6 +58,9 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
 }) => {
   const [translationMode, setTranslationMode] = useState<TranslationMode>('simple');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [pastedImage, setPastedImage] = useState<string | null>(null);
+  const [extractedText, setExtractedText] = useState<string>('');
+  const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -77,6 +85,10 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   const handleImageClick = () => {
     fileInputRef.current?.click();
   };
+  
+  const clearPastedImage = () => {
+    setPastedImage(null);
+  };
 
   const mockExtractTextFromImage = async (file: File): Promise<string> => {
     // This is a mock function that simulates OCR
@@ -88,7 +100,7 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Return mock text based on file name
-      const fileName = file.name.toLowerCase();
+      const fileName = file.name?.toLowerCase() || '';
       let extractedText = "Sample text extracted from your image.";
       
       if (fileName.includes('french') || fileName.includes('france')) {
@@ -127,8 +139,13 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
         description: "Extracting text from the image...",
       });
       
+      // Create an image preview
+      const imageUrl = URL.createObjectURL(file);
+      setPastedImage(imageUrl);
+      
       const extractedText = await mockExtractTextFromImage(file);
-      onInputTextChange(extractedText);
+      setExtractedText(extractedText);
+      setIsTextDialogOpen(true);
       
       toast({
         title: "Text extracted",
@@ -164,8 +181,13 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
               description: "Extracting text from the pasted image...",
             });
             
+            // Create an image preview
+            const imageUrl = URL.createObjectURL(blob);
+            setPastedImage(imageUrl);
+            
             const extractedText = await mockExtractTextFromImage(blob);
-            onInputTextChange(extractedText);
+            setExtractedText(extractedText);
+            setIsTextDialogOpen(true);
             
             toast({
               title: "Text extracted",
@@ -183,6 +205,16 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
         break;
       }
     }
+  };
+
+  const confirmExtractedText = () => {
+    onInputTextChange(extractedText);
+    setIsTextDialogOpen(false);
+  };
+
+  const cancelExtractedText = () => {
+    setIsTextDialogOpen(false);
+    // We don't clear the pastedImage as we want to keep it visible
   };
 
   return (
@@ -245,14 +277,37 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
 
           <div className="space-y-2 flex-grow">
             <div className="relative h-full flex flex-col">
-              <Textarea
-                value={inputText}
-                onChange={(e) => onInputTextChange(e.target.value)}
-                onPaste={handlePaste}
-                placeholder="Enter phrases or paste an image..."
-                className="min-h-[150px] pr-10 flex-grow"
-              />
-              {inputText && (
+              {pastedImage ? (
+                <div className="relative h-full flex flex-col">
+                  <div className="flex-grow relative overflow-hidden border rounded-md p-2">
+                    <img 
+                      src={pastedImage} 
+                      alt="Pasted content" 
+                      className="max-w-full max-h-full object-contain mx-auto"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-2 right-2 h-6 w-6 p-0 bg-white/70 hover:bg-white/90"
+                      onClick={clearPastedImage}
+                    >
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Clear image</span>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Textarea
+                  value={inputText}
+                  onChange={(e) => onInputTextChange(e.target.value)}
+                  onPaste={handlePaste}
+                  placeholder="Enter phrases or paste an image..."
+                  className="min-h-[150px] pr-10 flex-grow"
+                />
+              )}
+              
+              {inputText && !pastedImage && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -302,6 +357,29 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
         selectedLanguages={selectedLanguages}
         translationMode={translationMode}
       />
+      
+      {/* Dialog for confirming extracted text */}
+      <Dialog open={isTextDialogOpen} onOpenChange={setIsTextDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Extracted Text</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">The following text was extracted from your image:</p>
+            <div className="border p-3 rounded-md bg-slate-50">
+              <p className="text-md">{extractedText}</p>
+            </div>
+            <div className="flex space-x-2 justify-end">
+              <Button variant="outline" onClick={cancelExtractedText}>
+                Cancel
+              </Button>
+              <Button onClick={confirmExtractedText}>
+                Use this text
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
