@@ -18,6 +18,10 @@ const Index = () => {
     phrases,
     inputText,
     setInputText,
+    pastedImage,
+    setPastedImage,
+    extractedText,
+    setExtractedText,
     handleAddPhrase,
     onDelete
   } = useTranslator();
@@ -42,6 +46,10 @@ const Index = () => {
               translationResults={translationResults}
               inputText={inputText}
               onInputTextChange={setInputText}
+              pastedImage={pastedImage}
+              setPastedImage={setPastedImage}
+              extractedText={extractedText}
+              setExtractedText={setExtractedText}
             />
           ) : (
             <HistoryView 

@@ -32,6 +32,10 @@ interface PhraseInputProps {
   translationResults: TranslationResult[] | null;
   inputText: string;
   onInputTextChange: (text: string) => void;
+  pastedImage: string | null;
+  setPastedImage: (image: string | null) => void;
+  extractedText: string;
+  setExtractedText: (text: string) => void;
 }
 
 const AVAILABLE_LANGUAGES: { value: Language; label: string }[] = [
@@ -54,12 +58,14 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   onLanguagesChange,
   translationResults,
   inputText,
-  onInputTextChange
+  onInputTextChange,
+  pastedImage,
+  setPastedImage,
+  extractedText,
+  setExtractedText
 }) => {
   const [translationMode, setTranslationMode] = useState<TranslationMode>('simple');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const [pastedImage, setPastedImage] = useState<string | null>(null);
-  const [extractedText, setExtractedText] = useState<string>('');
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -88,8 +94,8 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   
   const clearPastedImage = () => {
     setPastedImage(null);
-    setExtractedText(''); // Clear extracted text when image is removed
-    onInputTextChange(''); // Also clear the input text in the parent component
+    setExtractedText('');
+    onInputTextChange('');
   };
 
   const mockExtractTextFromImage = async (file: File): Promise<string> => {
@@ -116,6 +122,41 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
       return extractedText;
     } finally {
       setIsProcessingImage(false);
+    }
+  };
+
+  // New function to send text to external translation service
+  const sendTextToTranslationService = async (text: string, targetLanguages: Language[]): Promise<Record<Language, string>> => {
+    try {
+      const response = await fetch('http://192.168.1.123:2345/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          targetLanguages: targetLanguages,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending text to translation service:', error);
+      toast({
+        title: 'Translation Service Error',
+        description: 'Could not connect to the translation service.',
+        variant: 'destructive',
+      });
+      
+      // Return a mock response in case of error
+      return targetLanguages.reduce((acc, lang) => ({
+        ...acc,
+        [lang]: `Translation to ${lang} failed`
+      }), {} as Record<Language, string>);
     }
   };
 

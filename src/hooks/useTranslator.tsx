@@ -20,6 +20,8 @@ export const useTranslator = () => {
 
   const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
   const [inputText, setInputText] = useState<string>('');
+  const [pastedImage, setPastedImage] = useState<string | null>(null);
+  const [extractedText, setExtractedText] = useState<string>('');
 
   // Save selectedLanguages to localStorage whenever it changes
   useEffect(() => {
@@ -119,6 +121,10 @@ export const useTranslator = () => {
     isLoading,
     inputText,
     setInputText,
+    pastedImage,
+    setPastedImage,
+    extractedText,
+    setExtractedText,
     handleAddPhrase,
     onDelete: (id: number) => deleteMutation.mutate(id)
   };
