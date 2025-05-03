@@ -1,13 +1,13 @@
 
 import type { Language, Translation, TranslationMode, TranslationResult } from '../types/language';
 
-export const mockTranslate = (text: string, mode: TranslationMode): TranslationResult[] => {
+export const mockTranslate = (text: string, mode: TranslationMode, sourceLanguage: Language = 'english'): TranslationResult[] => {
   // Instead of splitting by line, treat the whole text as one unit
   const results: TranslationResult[] = [{
     original: text,
     translations: {
       english: {
-        text: `[English for: ${text}]`,
+        text: sourceLanguage === 'english' ? text : `[English for: ${text}]`,
         examples: mode !== 'simple' ? [
           `Example 1 for the text`,
           `Example 2 for the text`,
@@ -19,7 +19,7 @@ export const mockTranslate = (text: string, mode: TranslationMode): TranslationR
         ] : []
       },
       vietnamese: {
-        text: `[Vietnamese for: ${text}]`,
+        text: sourceLanguage === 'vietnamese' ? text : `[Vietnamese for: ${text}]`,
         examples: mode !== 'simple' ? [
           `Vietnamese example 1`,
           `Vietnamese example 2`,
@@ -31,7 +31,7 @@ export const mockTranslate = (text: string, mode: TranslationMode): TranslationR
         ] : []
       },
       spanish: {
-        text: `[Spanish for: ${text}]`,
+        text: sourceLanguage === 'spanish' ? text : `[Spanish for: ${text}]`,
         examples: mode !== 'simple' ? [
           `Spanish example`
         ] : [],
@@ -42,7 +42,7 @@ export const mockTranslate = (text: string, mode: TranslationMode): TranslationR
         ] : []
       },
       german: {
-        text: `[German for: ${text}]`,
+        text: sourceLanguage === 'german' ? text : `[German for: ${text}]`,
         examples: mode !== 'simple' ? [
           `German example sentence`
         ] : [],
@@ -53,7 +53,7 @@ export const mockTranslate = (text: string, mode: TranslationMode): TranslationR
         ] : []
       },
       italian: {
-        text: `[Italian for: ${text}]`,
+        text: sourceLanguage === 'italian' ? text : `[Italian for: ${text}]`,
         examples: mode !== 'simple' ? [
           `Italian example for context`
         ] : [],

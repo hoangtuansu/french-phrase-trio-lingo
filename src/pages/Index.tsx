@@ -14,6 +14,8 @@ const Index = () => {
     setIsTitleCollapsed,
     selectedLanguages,
     setSelectedLanguages,
+    sourceLanguage,
+    setSourceLanguage,
     translationResults,
     phrases,
     inputText,
@@ -50,6 +52,8 @@ const Index = () => {
               setPastedImage={setPastedImage}
               extractedText={extractedText}
               setExtractedText={setExtractedText}
+              sourceLanguage={sourceLanguage}
+              onSourceLanguageChange={setSourceLanguage}
             />
           ) : (
             <HistoryView 

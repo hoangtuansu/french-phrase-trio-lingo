@@ -18,6 +18,12 @@ export const useTranslator = () => {
     return savedLanguages ? JSON.parse(savedLanguages) : ['english', 'vietnamese'];
   });
 
+  // Initialize sourceLanguage from localStorage or default to english
+  const [sourceLanguage, setSourceLanguage] = useState<Language>(() => {
+    const savedSourceLanguage = localStorage.getItem('sourceLanguage');
+    return savedSourceLanguage ? JSON.parse(savedSourceLanguage) : 'english';
+  });
+
   const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
   const [inputText, setInputText] = useState<string>('');
   const [pastedImage, setPastedImage] = useState<string | null>(null);
@@ -27,6 +33,11 @@ export const useTranslator = () => {
   useEffect(() => {
     localStorage.setItem('selectedLanguages', JSON.stringify(selectedLanguages));
   }, [selectedLanguages]);
+
+  // Save sourceLanguage to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sourceLanguage', JSON.stringify(sourceLanguage));
+  }, [sourceLanguage]);
 
   const { data: phrases = [], isLoading } = useQuery({
     queryKey: ['phrases'],
@@ -86,9 +97,9 @@ export const useTranslator = () => {
     },
   });
 
-  const handleAddPhrase = (french: string, languages: Language[], mode: TranslationMode) => {
+  const handleAddPhrase = (french: string, languages: Language[], mode: TranslationMode, source: Language) => {
     // Clear previous translations and set the new translations
-    const translations = mockTranslate(french, mode);
+    const translations = mockTranslate(french, mode, source);
     setTranslationResults(translations);
     setInputText(french);
     
@@ -116,6 +127,8 @@ export const useTranslator = () => {
     setIsTitleCollapsed,
     selectedLanguages,
     setSelectedLanguages,
+    sourceLanguage,
+    setSourceLanguage,
     translationResults,
     phrases,
     isLoading,

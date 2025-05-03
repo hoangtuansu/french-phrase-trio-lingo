@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,12 +23,19 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Language, TranslationResult, TranslationMode } from '../types/language';
 import { useToast } from "@/hooks/use-toast";
 import Tesseract from 'tesseract.js';
 
 interface PhraseInputProps {
-  onAddPhrase: (phrase: string, languages: Language[], mode: TranslationMode) => void;
+  onAddPhrase: (phrase: string, languages: Language[], mode: TranslationMode, sourceLanguage: Language) => void;
   selectedLanguages: Language[];
   onLanguagesChange: (languages: Language[]) => void;
   translationResults: TranslationResult[] | null;
@@ -37,6 +45,8 @@ interface PhraseInputProps {
   setPastedImage: (image: string | null) => void;
   extractedText: string;
   setExtractedText: (text: string) => void;
+  sourceLanguage: Language;
+  onSourceLanguageChange: (language: Language) => void;
 }
 
 const AVAILABLE_LANGUAGES: { value: Language; label: string }[] = [
@@ -63,18 +73,21 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   pastedImage,
   setPastedImage,
   extractedText,
-  setExtractedText
+  setExtractedText,
+  sourceLanguage,
+  onSourceLanguageChange
 }) => {
   const [translationMode, setTranslationMode] = useState<TranslationMode>('simple');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
+  const [editedExtractedText, setEditedExtractedText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputText.trim() && selectedLanguages.length > 0) {
-      onAddPhrase(inputText.trim(), selectedLanguages, translationMode);
+      onAddPhrase(inputText.trim(), selectedLanguages, translationMode, sourceLanguage);
     }
   };
 
@@ -99,7 +112,6 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
     onInputTextChange('');
   };
 
-  
   const mockExtractTextFromImage = async (file: File): Promise<string> => {
     setIsProcessingImage(true);
     try {
@@ -109,33 +121,6 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
         { logger: m => console.log(m) }
       );
       return text;
-    } finally {
-      setIsProcessingImage(false);
-    }
-  };
-
-  const mockExtractTextFromImage1 = async (file: File): Promise<string> => {
-    // This is a mock function that simulates OCR
-    // In a real app, you would use a service like Tesseract.js or an API
-    setIsProcessingImage(true);
-    
-    try {
-      // Simulating API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Return mock text based on file name
-      const fileName = file.name?.toLowerCase() || '';
-      let extractedText = "Sample text extracted from your image.";
-      
-      if (fileName.includes('french') || fileName.includes('france')) {
-        extractedText = "Bonjour, comment ça va aujourd'hui?";
-      } else if (fileName.includes('spanish') || fileName.includes('spain')) {
-        extractedText = "Hola, ¿cómo estás hoy?";
-      } else if (fileName.includes('german') || fileName.includes('germany')) {
-        extractedText = "Hallo, wie geht es Ihnen heute?";
-      }
-      
-      return extractedText;
     } finally {
       setIsProcessingImage(false);
     }
@@ -151,6 +136,7 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
         },
         body: JSON.stringify({
           text,
+          sourceLanguage,
           targetLanguages: targetLanguages,
         }),
       });
@@ -204,6 +190,7 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
       
       const extractedText = await mockExtractTextFromImage(file);
       setExtractedText(extractedText);
+      setEditedExtractedText(extractedText); // Initialize edited text with extracted text
       setIsTextDialogOpen(true);
       
       toast({
@@ -246,6 +233,7 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
             
             const extractedText = await mockExtractTextFromImage(blob);
             setExtractedText(extractedText);
+            setEditedExtractedText(extractedText); // Initialize edited text with extracted text
             setIsTextDialogOpen(true);
             
             toast({
@@ -267,7 +255,8 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   };
 
   const confirmExtractedText = () => {
-    onInputTextChange(extractedText);
+    onInputTextChange(editedExtractedText);
+    setExtractedText(editedExtractedText);
     setIsTextDialogOpen(false);
   };
 
@@ -287,29 +276,21 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
           
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Translation Languages:</label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {selectedLanguages.length 
-                      ? `${selectedLanguages.length} languages selected` 
-                      : "Select languages"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
+              <label className="text-sm font-medium">Source Language:</label>
+              <Select value={sourceLanguage} onValueChange={(value) => onSourceLanguageChange(value as Language)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select source language" />
+                </SelectTrigger>
+                <SelectContent>
                   {AVAILABLE_LANGUAGES.map((lang) => (
-                    <DropdownMenuCheckboxItem
-                      key={lang.value}
-                      checked={selectedLanguages.includes(lang.value)}
-                      onCheckedChange={() => toggleLanguage(lang.value)}
-                    >
+                    <SelectItem key={lang.value} value={lang.value}>
                       {lang.label}
-                    </DropdownMenuCheckboxItem>
+                    </SelectItem>
                   ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </SelectContent>
+              </Select>
             </div>
-
+            
             <div className="space-y-2">
               <label className="text-sm font-medium">Translation Mode:</label>
               <Tabs 
@@ -332,6 +313,30 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
                 </TabsList>
               </Tabs>
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Target Languages:</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {selectedLanguages.length 
+                    ? `${selectedLanguages.length} languages selected` 
+                    : "Select languages"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                {AVAILABLE_LANGUAGES.map((lang) => (
+                  <DropdownMenuCheckboxItem
+                    key={lang.value}
+                    checked={selectedLanguages.includes(lang.value)}
+                    onCheckedChange={() => toggleLanguage(lang.value)}
+                  >
+                    {lang.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="space-y-2 flex-grow">
@@ -421,13 +426,15 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
       <Dialog open={isTextDialogOpen} onOpenChange={setIsTextDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Extracted Text</DialogTitle>
+            <DialogTitle>Edit Extracted Text</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">The following text was extracted from your image:</p>
-            <div className="border p-3 rounded-md bg-slate-50">
-              <p className="text-md">{extractedText}</p>
-            </div>
+            <p className="text-sm text-gray-600">Edit the extracted text if needed:</p>
+            <Textarea 
+              value={editedExtractedText} 
+              onChange={(e) => setEditedExtractedText(e.target.value)} 
+              className="min-h-[150px]"
+            />
             <div className="flex space-x-2 justify-end">
               <Button variant="outline" onClick={cancelExtractedText}>
                 Cancel
