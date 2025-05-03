@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/tabs";
 import type { Language, TranslationResult, TranslationMode } from '../types/language';
 import { useToast } from "@/hooks/use-toast";
+import Tesseract from 'tesseract.js';
 
 interface PhraseInputProps {
   onAddPhrase: (phrase: string, languages: Language[], mode: TranslationMode) => void;
@@ -98,7 +99,22 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
     onInputTextChange('');
   };
 
+  
   const mockExtractTextFromImage = async (file: File): Promise<string> => {
+    setIsProcessingImage(true);
+    try {
+      const { data: { text } } = await Tesseract.recognize(
+        file,
+        'eng', // language code
+        { logger: m => console.log(m) }
+      );
+      return text;
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
+  const mockExtractTextFromImage1 = async (file: File): Promise<string> => {
     // This is a mock function that simulates OCR
     // In a real app, you would use a service like Tesseract.js or an API
     setIsProcessingImage(true);
