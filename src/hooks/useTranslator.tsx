@@ -24,6 +24,12 @@ export const useTranslator = () => {
     return savedSourceLanguage ? JSON.parse(savedSourceLanguage) : 'english';
   });
 
+  // Initialize translationMode from localStorage or default to simple
+  const [translationMode, setTranslationMode] = useState<TranslationMode>(() => {
+    const savedTranslationMode = localStorage.getItem('translationMode');
+    return savedTranslationMode ? JSON.parse(savedTranslationMode) : 'simple';
+  });
+
   const [translationResults, setTranslationResults] = useState<TranslationResult[] | null>(null);
   const [inputText, setInputText] = useState<string>('');
   const [pastedImage, setPastedImage] = useState<string | null>(null);
@@ -38,6 +44,11 @@ export const useTranslator = () => {
   useEffect(() => {
     localStorage.setItem('sourceLanguage', JSON.stringify(sourceLanguage));
   }, [sourceLanguage]);
+
+  // Save translationMode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('translationMode', JSON.stringify(translationMode));
+  }, [translationMode]);
 
   const { data: phrases = [], isLoading } = useQuery({
     queryKey: ['phrases'],
@@ -102,6 +113,7 @@ export const useTranslator = () => {
     const translations = mockTranslate(french, mode, source);
     setTranslationResults(translations);
     setInputText(french);
+    setTranslationMode(mode); // Update the translation mode
     
     translations.forEach(translation => {
       // Filter translations based on selected languages
@@ -129,6 +141,8 @@ export const useTranslator = () => {
     setSelectedLanguages,
     sourceLanguage,
     setSourceLanguage,
+    translationMode,
+    setTranslationMode,
     translationResults,
     phrases,
     isLoading,

@@ -16,6 +16,8 @@ const Index = () => {
     setSelectedLanguages,
     sourceLanguage,
     setSourceLanguage,
+    translationMode,
+    setTranslationMode,
     translationResults,
     phrases,
     inputText,
@@ -54,6 +56,8 @@ const Index = () => {
               setExtractedText={setExtractedText}
               sourceLanguage={sourceLanguage}
               onSourceLanguageChange={setSourceLanguage}
+              translationMode={translationMode}
+              onTranslationModeChange={setTranslationMode}
             />
           ) : (
             <HistoryView 

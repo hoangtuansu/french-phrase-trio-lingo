@@ -47,6 +47,8 @@ interface PhraseInputProps {
   setExtractedText: (text: string) => void;
   sourceLanguage: Language;
   onSourceLanguageChange: (language: Language) => void;
+  translationMode: TranslationMode;
+  onTranslationModeChange: (mode: TranslationMode) => void;
 }
 
 const AVAILABLE_LANGUAGES: { value: Language; label: string }[] = [
@@ -86,9 +88,10 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   extractedText,
   setExtractedText,
   sourceLanguage,
-  onSourceLanguageChange
+  onSourceLanguageChange,
+  translationMode,
+  onTranslationModeChange
 }) => {
-  const [translationMode, setTranslationMode] = useState<TranslationMode>('simple');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const [editedExtractedText, setEditedExtractedText] = useState('');
@@ -308,9 +311,8 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
             <div className="space-y-2">
               <label className="text-sm font-medium">Translation Mode:</label>
               <Tabs 
-                defaultValue="simple" 
                 value={translationMode}
-                onValueChange={(value) => setTranslationMode(value as TranslationMode)}
+                onValueChange={(value) => onTranslationModeChange(value as TranslationMode)}
                 className="w-full"
               >
                 <TabsList className="w-full grid grid-cols-3">

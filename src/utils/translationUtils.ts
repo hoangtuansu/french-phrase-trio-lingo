@@ -62,6 +62,17 @@ export const mockTranslate = (text: string, mode: TranslationMode, sourceLanguag
           `Italian adjectives usually agree in gender and number with the noun.`,
           `In Italian, the subject pronoun is often omitted.`
         ] : []
+      },
+      french: {
+        text: sourceLanguage === 'french' ? text : `[French for: ${text}]`,
+        examples: mode !== 'simple' ? [
+          `French example phrase`
+        ] : [],
+        idioms: mode !== 'simple' ? [`Common French expression`] : [],
+        grammarNotes: mode === 'learning' ? [
+          `French nouns have grammatical gender (masculine or feminine).`,
+          `In French, adjectives usually agree in gender and number with the noun they modify.`
+        ] : []
       }
     }
   }];
