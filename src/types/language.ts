@@ -1,5 +1,5 @@
 
-export type Language = 'english' | 'vietnamese' | 'spanish' | 'german' | 'italian';
+export type Language = 'english' | 'vietnamese' | 'spanish' | 'german' | 'italian' | 'french';
 
 export type TranslationMode = 'simple' | 'advanced' | 'learning';
 

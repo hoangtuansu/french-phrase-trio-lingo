@@ -55,6 +55,7 @@ const AVAILABLE_LANGUAGES: { value: Language; label: string }[] = [
   { value: 'spanish', label: 'Spanish' },
   { value: 'german', label: 'German' },
   { value: 'italian', label: 'Italian' },
+  { value: 'french', label: 'French' },
 ];
 
 const TRANSLATION_MODES = [
@@ -62,6 +63,16 @@ const TRANSLATION_MODES = [
   { value: 'advanced', label: 'Advanced', description: 'Includes examples and idioms' },
   { value: 'learning', label: 'Learning', description: 'Adds grammar explanations' },
 ];
+
+// Map of language to Tesseract language code
+const TESSERACT_LANG_CODES: Record<Language, string> = {
+  english: 'eng',
+  vietnamese: 'vie',
+  spanish: 'spa',
+  german: 'deu',
+  italian: 'ita',
+  french: 'fra'
+};
 
 const PhraseInput: React.FC<PhraseInputProps> = ({ 
   onAddPhrase, 
@@ -115,9 +126,12 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   const mockExtractTextFromImage = async (file: File): Promise<string> => {
     setIsProcessingImage(true);
     try {
+      // Use the source language to determine the Tesseract language code
+      const langCode = TESSERACT_LANG_CODES[sourceLanguage] || 'eng'; // default to English if not found
+      
       const { data: { text } } = await Tesseract.recognize(
         file,
-        'eng', // language code
+        langCode, // language code based on selected source language
         { logger: m => console.log(m) }
       );
       return text;
