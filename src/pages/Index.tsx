@@ -5,7 +5,7 @@ import Navigation from '../components/Navigation';
 import HistoryView from '../components/HistoryView';
 import VocabularyInput from '../components/VocabularyInput';
 import VocabularyView from '../components/VocabularyView';
-import VocabularyConfig from '../components/VocabularyConfig';
+import VocabularySettings from '../components/VocabularySettings';
 import Header from '../components/Header';
 import { useTranslator } from '../hooks/useTranslator';
 
@@ -75,12 +75,15 @@ const Index = () => {
             />
           ) : (
             <div className="space-y-8">
-              <VocabularyConfig
-                sourceLanguage={sourceLanguage}
-                targetLanguage={targetLanguage}
-                onSourceLanguageChange={setSourceLanguage}
-                onTargetLanguageChange={setTargetLanguage}
-              />
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">Vocabulary</h2>
+                <VocabularySettings
+                  sourceLanguage={sourceLanguage}
+                  targetLanguage={targetLanguage}
+                  onSourceLanguageChange={setSourceLanguage}
+                  onTargetLanguageChange={setTargetLanguage}
+                />
+              </div>
               <VocabularyInput 
                 onAddVocabulary={handleAddVocabulary}
                 sourceLanguage={sourceLanguage}
