@@ -28,7 +28,7 @@ const VocabularySettings: React.FC<VocabularySettingsProps> = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="ml-auto">
+        <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
           <span className="sr-only">Vocabulary Settings</span>
         </Button>
