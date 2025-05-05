@@ -2,12 +2,12 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
-import { getPhrases, savePhraseToDb, deletePhrase } from '../utils/supabase';
-import type { Language, TranslationResult, TranslationMode, Translation } from '../types/language';
+import { getPhrases, savePhraseToDb, deletePhrase, saveVocabularyToDb, getVocabulary, deleteVocabularyItem } from '../utils/supabase';
+import type { Language, TranslationResult, TranslationMode, Translation, VocabularyItem } from '../types/language';
 import { mockTranslate } from '../utils/translationUtils';
 
 export const useTranslator = () => {
-  const [activeView, setActiveView] = useState<'add' | 'history'>('add');
+  const [activeView, setActiveView] = useState<'add' | 'history' | 'vocabulary'>('add');
   const [isTitleCollapsed, setIsTitleCollapsed] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -22,6 +22,12 @@ export const useTranslator = () => {
   const [sourceLanguage, setSourceLanguage] = useState<Language>(() => {
     const savedSourceLanguage = localStorage.getItem('sourceLanguage');
     return savedSourceLanguage ? JSON.parse(savedSourceLanguage) : 'english';
+  });
+
+  // Initialize targetLanguage from localStorage or default to vietnamese
+  const [targetLanguage, setTargetLanguage] = useState<Language>(() => {
+    const savedTargetLanguage = localStorage.getItem('targetLanguage');
+    return savedTargetLanguage ? JSON.parse(savedTargetLanguage) : 'vietnamese';
   });
 
   // Initialize translationMode from localStorage or default to simple
@@ -45,14 +51,24 @@ export const useTranslator = () => {
     localStorage.setItem('sourceLanguage', JSON.stringify(sourceLanguage));
   }, [sourceLanguage]);
 
+  // Save targetLanguage to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('targetLanguage', JSON.stringify(targetLanguage));
+  }, [targetLanguage]);
+
   // Save translationMode to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('translationMode', JSON.stringify(translationMode));
   }, [translationMode]);
 
-  const { data: phrases = [], isLoading } = useQuery({
+  const { data: phrases = [], isLoading: isLoadingPhrases } = useQuery({
     queryKey: ['phrases'],
     queryFn: getPhrases,
+  });
+
+  const { data: vocabulary = [], isLoading: isLoadingVocabulary } = useQuery({
+    queryKey: ['vocabulary'],
+    queryFn: getVocabulary,
   });
 
   const addPhraseMutation = useMutation({
@@ -108,6 +124,45 @@ export const useTranslator = () => {
     },
   });
 
+  const addVocabularyMutation = useMutation({
+    mutationFn: (vocabData: Omit<VocabularyItem, 'id' | 'created_at'>) => {
+      return saveVocabularyToDb(vocabData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vocabulary'] });
+      toast({
+        title: "Vocabulary added",
+        description: "Your vocabulary item has been saved successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error saving vocabulary:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save vocabulary item. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteVocabularyMutation = useMutation({
+    mutationFn: deleteVocabularyItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vocabulary'] });
+      toast({
+        title: "Vocabulary deleted",
+        description: "The vocabulary item has been removed from your list.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete vocabulary item. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddPhrase = (french: string, languages: Language[], mode: TranslationMode, source: Language) => {
     // Clear previous translations and set the new translations
     const translations = mockTranslate(french, mode, source);
@@ -132,6 +187,22 @@ export const useTranslator = () => {
     });
   };
 
+  const handleAddVocabulary = (
+    word: string, 
+    meaning: string, 
+    context: string,
+    sourceLanguage: Language,
+    targetLanguage: Language
+  ) => {
+    addVocabularyMutation.mutate({
+      word,
+      meaning,
+      context,
+      sourceLanguage,
+      targetLanguage
+    });
+  };
+
   return {
     activeView,
     setActiveView,
@@ -141,11 +212,14 @@ export const useTranslator = () => {
     setSelectedLanguages,
     sourceLanguage,
     setSourceLanguage,
+    targetLanguage,
+    setTargetLanguage,
     translationMode,
     setTranslationMode,
     translationResults,
     phrases,
-    isLoading,
+    vocabulary,
+    isLoading: isLoadingPhrases || isLoadingVocabulary,
     inputText,
     setInputText,
     pastedImage,
@@ -153,6 +227,8 @@ export const useTranslator = () => {
     extractedText,
     setExtractedText,
     handleAddPhrase,
-    onDelete: (id: number) => deleteMutation.mutate(id)
+    handleAddVocabulary,
+    onDelete: (id: number) => deleteMutation.mutate(id),
+    onDeleteVocabulary: (id: number) => deleteVocabularyMutation.mutate(id)
   };
 };
