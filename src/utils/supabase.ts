@@ -11,7 +11,7 @@ const isMissingCredentials = !supabaseUrl || !supabaseKey;
 
 // Log warning about missing configuration
 if (isMissingCredentials) {
-  console.error('⚠️ Supabase configuration missing! Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+  console.error('⚠️ Supabase configuration missing! Operating in demo mode with mock data. To enable persistent storage, please connect Supabase from the top-right integration button.');
 }
 
 // Create the Supabase client only if we have valid credentials
@@ -19,17 +19,36 @@ export const supabase = isMissingCredentials
   ? createMockClient()
   : createClient(supabaseUrl, supabaseKey);
 
-// Mock client factory to prevent runtime errors
+// Mock client factory with more helpful debugging
 function createMockClient() {
-  const mockResponse = { data: null, error: new Error('Supabase configuration is missing') };
+  const mockResponse = { 
+    data: null, 
+    error: new Error('Supabase configuration is missing. Operating in demo mode.') 
+  };
   
   return {
     from: () => ({
-      insert: () => ({ select: () => ({ single: () => Promise.resolve(mockResponse) }) }),
-      select: () => ({ order: () => Promise.resolve(mockResponse) }),
-      delete: () => ({ eq: () => Promise.resolve(mockResponse) }),
+      insert: () => ({ 
+        select: () => ({ 
+          single: () => {
+            console.log('Mock insert operation called - data will not be persisted');
+            return Promise.resolve(mockResponse);
+          }
+        }) 
+      }),
+      select: () => ({ 
+        order: () => {
+          console.log('Mock select operation called - returning empty data array');
+          return Promise.resolve({ data: [], error: null });
+        } 
+      }),
+      delete: () => ({ 
+        eq: () => {
+          console.log('Mock delete operation called - no data will be deleted');
+          return Promise.resolve(mockResponse);
+        } 
+      }),
     }),
-    // Add other methods as needed to prevent runtime errors
   };
 }
 
@@ -43,7 +62,12 @@ export interface PhraseRecord {
 
 export const savePhraseToDb = async (phrase: Omit<PhraseRecord, 'id' | 'created_at'>) => {
   if (isMissingCredentials) {
-    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+    console.warn('Supabase configuration is missing. Data will not persist beyond this session.');
+    return {
+      ...phrase,
+      id: Math.floor(Math.random() * 10000),
+      created_at: new Date().toISOString()
+    };
   }
 
   const { data, error } = await supabase
@@ -73,7 +97,8 @@ export const getPhrases = async () => {
 
 export const deletePhrase = async (id: number) => {
   if (isMissingCredentials) {
-    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+    console.warn('Supabase configuration missing. Delete operation simulated.');
+    return;
   }
 
   const { error } = await supabase
@@ -87,7 +112,12 @@ export const deletePhrase = async (id: number) => {
 // Vocabulary functions
 export const saveVocabularyToDb = async (vocabulary: Omit<VocabularyItem, 'id' | 'created_at'>) => {
   if (isMissingCredentials) {
-    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+    console.warn('Supabase configuration missing. Creating mock vocabulary item instead.');
+    return {
+      ...vocabulary,
+      id: Math.floor(Math.random() * 10000),
+      created_at: new Date().toISOString()
+    };
   }
 
   const { data, error } = await supabase
@@ -117,7 +147,8 @@ export const getVocabulary = async () => {
 
 export const deleteVocabularyItem = async (id: number) => {
   if (isMissingCredentials) {
-    throw new Error('Supabase configuration is missing. Please set the required environment variables.');
+    console.warn('Supabase configuration missing. Delete operation simulated.');
+    return;
   }
 
   const { error } = await supabase

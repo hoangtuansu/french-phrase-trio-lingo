@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -126,7 +125,22 @@ export const useTranslator = () => {
 
   const addVocabularyMutation = useMutation({
     mutationFn: (vocabData: Omit<VocabularyItem, 'id' | 'created_at'>) => {
-      return saveVocabularyToDb(vocabData);
+      try {
+        return saveVocabularyToDb(vocabData);
+      } catch (error) {
+        console.error("Error in vocabulary mutation:", error);
+        
+        // If Supabase is not configured, create a mock item with a temporary ID for demo purposes
+        if (error instanceof Error && error.message.includes('Supabase configuration is missing')) {
+          const mockItem: VocabularyItem = {
+            ...vocabData,
+            id: Math.floor(Math.random() * 10000),
+            created_at: new Date().toISOString()
+          };
+          return Promise.resolve(mockItem);
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vocabulary'] });
@@ -137,9 +151,15 @@ export const useTranslator = () => {
     },
     onError: (error) => {
       console.error("Error saving vocabulary:", error);
+      
+      // More helpful error message specifically for Supabase configuration issues
+      const errorMessage = error instanceof Error && error.message.includes('Supabase configuration is missing')
+        ? "Supabase not configured. For full functionality, please set up Supabase integration."
+        : "Failed to save vocabulary item. Please try again.";
+      
       toast({
         title: "Error",
-        description: "Failed to save vocabulary item. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -154,10 +174,17 @@ export const useTranslator = () => {
         description: "The vocabulary item has been removed from your list.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error deleting vocabulary:", error);
+      
+      // More helpful error message for Supabase configuration issues
+      const errorMessage = error instanceof Error && error.message.includes('Supabase configuration is missing')
+        ? "Supabase not configured. For full functionality, please set up Supabase integration."
+        : "Failed to delete vocabulary item. Please try again.";
+      
       toast({
         title: "Error",
-        description: "Failed to delete vocabulary item. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -194,6 +221,32 @@ export const useTranslator = () => {
     sourceLanguage: Language,
     targetLanguage: Language
   ) => {
+    // For demo purposes in absence of Supabase, create a local mock item
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      // Push to local state directly for demo purposes
+      const mockItem: VocabularyItem = {
+        id: Math.floor(Math.random() * 10000),
+        word,
+        meaning,
+        context,
+        sourceLanguage,
+        targetLanguage,
+        created_at: new Date().toISOString()
+      };
+      
+      // Update local state
+      queryClient.setQueryData(['vocabulary'], (old: VocabularyItem[] | undefined) => {
+        return [mockItem, ...(old || [])];
+      });
+      
+      toast({
+        title: "Vocabulary added (Demo Mode)",
+        description: "Your vocabulary item has been saved locally. To enable persistent storage, connect Supabase.",
+      });
+      return;
+    }
+    
+    // Otherwise use the normal mutation
     addVocabularyMutation.mutate({
       word,
       meaning,
