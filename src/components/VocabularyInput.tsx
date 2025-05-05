@@ -18,8 +18,6 @@ interface VocabularyInputProps {
   ) => void;
   sourceLanguage: Language;
   targetLanguage: Language;
-  onSourceLanguageChange: (language: Language) => void;
-  onTargetLanguageChange: (language: Language) => void;
   pastedImage: string | null;
   setPastedImage: (image: string | null) => void;
   extractedText: string;
@@ -30,8 +28,6 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   onAddVocabulary,
   sourceLanguage,
   targetLanguage,
-  onSourceLanguageChange,
-  onTargetLanguageChange,
   pastedImage,
   setPastedImage,
   extractedText,
@@ -81,45 +77,10 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
     }
   };
 
-  const languageOptions: Language[] = ['english', 'french', 'vietnamese', 'spanish', 'german', 'italian'];
-
   return (
     <Card className="w-full">
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pt-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sourceLanguage">Source Language</Label>
-              <select
-                id="sourceLanguage"
-                value={sourceLanguage}
-                onChange={(e) => onSourceLanguageChange(e.target.value as Language)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {languageOptions.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="targetLanguage">Target Language</Label>
-              <select
-                id="targetLanguage"
-                value={targetLanguage}
-                onChange={(e) => onTargetLanguageChange(e.target.value as Language)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {languageOptions.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
           <div className="space-y-2">
             <Label htmlFor="word">Word/Phrase/Idiom</Label>
             <Input 

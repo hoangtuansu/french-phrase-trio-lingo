@@ -5,6 +5,7 @@ import Navigation from '../components/Navigation';
 import HistoryView from '../components/HistoryView';
 import VocabularyInput from '../components/VocabularyInput';
 import VocabularyView from '../components/VocabularyView';
+import VocabularyConfig from '../components/VocabularyConfig';
 import Header from '../components/Header';
 import { useTranslator } from '../hooks/useTranslator';
 
@@ -74,12 +75,16 @@ const Index = () => {
             />
           ) : (
             <div className="space-y-8">
-              <VocabularyInput 
-                onAddVocabulary={handleAddVocabulary}
+              <VocabularyConfig
                 sourceLanguage={sourceLanguage}
                 targetLanguage={targetLanguage}
                 onSourceLanguageChange={setSourceLanguage}
                 onTargetLanguageChange={setTargetLanguage}
+              />
+              <VocabularyInput 
+                onAddVocabulary={handleAddVocabulary}
+                sourceLanguage={sourceLanguage}
+                targetLanguage={targetLanguage}
                 pastedImage={pastedImage}
                 setPastedImage={setPastedImage}
                 extractedText={extractedText}
