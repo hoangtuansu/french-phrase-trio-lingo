@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/dialog";
 import { Language } from '../types/language';
 import { X } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 import Tesseract from 'tesseract.js';
 
-// Map of language to Tesseract language code
+
 const TESSERACT_LANG_CODES: Record<Language, string> = {
   english: 'eng',
   vietnamese: 'vie',
@@ -37,8 +38,6 @@ interface VocabularyInputProps {
   ) => void;
   sourceLanguage: Language;
   targetLanguage: Language;
-  pastedImage: string | null;
-  setPastedImage: (image: string | null) => void;
   extractedText: string;
   setExtractedText: (text: string) => void;
 }
@@ -47,8 +46,6 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   onAddVocabulary,
   sourceLanguage,
   targetLanguage,
-  pastedImage,
-  setPastedImage,
   extractedText,
   setExtractedText,
 }) => {
@@ -57,21 +54,13 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   const [context, setContext] = useState('');
   const [showExtractDialog, setShowExtractDialog] = useState(false);
   const [tempPastedImage, setTempPastedImage] = useState<string | null>(null);
-  // Local state for managing images and text
+  // New state to manage image specifically for this component
   const [localPastedImage, setLocalPastedImage] = useState<string | null>(null);
   const [localExtractedText, setLocalExtractedText] = useState('');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
-
-  // Effect to maintain state when switching views
-  useEffect(() => {
-    // If there's already a pasted image from parent state, use it
-    if (pastedImage && !localPastedImage) {
-      setLocalPastedImage(pastedImage);
-    }
-    if (extractedText && !localExtractedText) {
-      setLocalExtractedText(extractedText);
-    }
-  }, [pastedImage, extractedText, localPastedImage, localExtractedText]);
+  const {
+      toast
+    } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +68,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
     // If there's a temporary pasted image but no dialog shown yet, show the dialog
     if (tempPastedImage && !showExtractDialog) {
       setLocalPastedImage(tempPastedImage);
-      startImageProcessing(tempPastedImage);
+      setShowExtractDialog(true);
       return;
     }
     
@@ -100,66 +89,77 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
     }
   };
 
-  const handlePaste = (e: React.ClipboardEvent) => {
+  const mockExtractTextFromImage = async (file: File): Promise<string> => {
+      setIsProcessingImage(true);
+      try {
+        // Use the source language to determine the Tesseract language code
+        const langCode = TESSERACT_LANG_CODES[sourceLanguage] || 'eng'; // default to English if not found
+  
+        const {
+          data: {
+            text
+          }
+        } = await Tesseract.recognize(file, langCode,
+        // language code based on selected source language
+        {
+          logger: m => console.log(m)
+        });
+        return text;
+      } finally {
+        setIsProcessingImage(false);
+      }
+    };
+
+  const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (items) {
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
           const blob = items[i].getAsFile();
           if (blob) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              // Show the image immediately when pasted
-              setTempPastedImage(event.target?.result as string);
-            };
-            reader.readAsDataURL(blob);
-            // Prevent the image from being pasted into the textarea
-            e.preventDefault();
+            try {
+              toast({
+                title: "Processing image",
+                description: "Extracting text from the pasted image..."
+              });
+  
+              // Create an image preview
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                // Show the image immediately when pasted
+                setTempPastedImage(event.target?.result as string);
+              };
+              reader.readAsDataURL(blob);
+              
+              const extractedText = await mockExtractTextFromImage(blob);
+              setExtractedText(extractedText);
+              setLocalExtractedText(extractedText); // Initialize edited text with extracted text
+              setShowExtractDialog(true);
+
+              toast({
+                title: "Text extracted",
+                description: "Text has been extracted from the image."
+              });
+            } catch (error) {
+              console.error("Error processing pasted image:", error);
+              toast({
+                title: "Error",
+                description: "Failed to extract text from the pasted image.",
+                variant: "destructive"
+              });
+            }
+
           }
         }
       }
     }
   };
 
-  const mockExtractTextFromImage = async (imageUrl: string): Promise<string> => {
-    setIsProcessingImage(true);
-    try {
-      // Convert data URL to Blob
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      // Use the source language to determine the Tesseract language code
-      const langCode = TESSERACT_LANG_CODES[sourceLanguage] || 'eng'; // default to English if not found
-
-      const { data: { text } } = await Tesseract.recognize(
-        blob,
-        langCode,
-        {
-          logger: m => console.log(m)
-        }
-      );
-      return text;
-    } catch (error) {
-      console.error("Error extracting text:", error);
-      return "Error extracting text. Please try again.";
-    } finally {
-      setIsProcessingImage(false);
-    }
-  };
-
-  const startImageProcessing = async (imageUrl: string) => {
-    try {
-      const text = await mockExtractTextFromImage(imageUrl);
-      setLocalExtractedText(text);
-      setShowExtractDialog(true);
-    } catch (error) {
-      console.error("Error processing image:", error);
-    }
-  };
-
   const handleConfirmExtractedText = () => {
     setShowExtractDialog(false);
-    // Only update local state, not parent state
+    setLocalExtractedText(extractedText);
+    // Don't update the shared state from parent component
   };
 
   const clearWord = () => {
@@ -285,16 +285,8 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           </CardContent>
           
           <CardFooter>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isProcessingImage}
-            >
-              {isProcessingImage 
-                ? "Processing Image..." 
-                : (tempPastedImage && !localPastedImage 
-                  ? "Process Image & Extract Text" 
-                  : "Add to Vocabulary")}
+            <Button type="submit" className="w-full" disabled={isProcessingImage}>
+              {tempPastedImage && !localPastedImage ? "Process Image & Extract Text" : "Add to Vocabulary"}
             </Button>
           </CardFooter>
         </form>
@@ -310,8 +302,8 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           </DialogHeader>
           <div className="py-4">
             <Textarea 
-              value={localExtractedText} 
-              onChange={(e) => setLocalExtractedText(e.target.value)}
+              value={extractedText} 
+              onChange={(e) => setExtractedText(e.target.value)}
               placeholder="Extracted text will appear here (you can edit it)"
               className="min-h-[120px]"
             />
