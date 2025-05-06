@@ -46,13 +46,16 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   const [context, setContext] = useState('');
   const [showExtractDialog, setShowExtractDialog] = useState(false);
   const [tempPastedImage, setTempPastedImage] = useState<string | null>(null);
+  // New state to manage image specifically for this component
+  const [localPastedImage, setLocalPastedImage] = useState<string | null>(null);
+  const [localExtractedText, setLocalExtractedText] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // If there's a temporary pasted image but no dialog shown yet, show the dialog
     if (tempPastedImage && !showExtractDialog) {
-      setPastedImage(tempPastedImage);
+      setLocalPastedImage(tempPastedImage);
       setShowExtractDialog(true);
       return;
     }
@@ -61,15 +64,15 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
       onAddVocabulary(
         word.trim(), 
         meaning.trim(), 
-        pastedImage ? extractedText.trim() : context.trim(),
+        localPastedImage ? localExtractedText.trim() : context.trim(),
         sourceLanguage,
         targetLanguage
       );
       setWord('');
       setMeaning('');
       setContext('');
-      setPastedImage(null);
-      setExtractedText('');
+      setLocalPastedImage(null);
+      setLocalExtractedText('');
       setTempPastedImage(null);
     }
   };
@@ -97,7 +100,8 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
 
   const handleConfirmExtractedText = () => {
     setShowExtractDialog(false);
-    // The extracted text is already stored in the extractedText state
+    setLocalExtractedText(extractedText);
+    // Don't update the shared state from parent component
   };
 
   const clearWord = () => {
@@ -113,9 +117,10 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   };
 
   const clearImage = () => {
-    setPastedImage(null);
-    setExtractedText('');
+    setLocalPastedImage(null);
+    setLocalExtractedText('');
     setTempPastedImage(null);
+    // Don't clear the parent's image state
   };
 
   return (
@@ -174,11 +179,11 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
             
             <div className="space-y-2">
               <Label htmlFor="context">Context</Label>
-              {tempPastedImage || pastedImage ? (
+              {tempPastedImage || localPastedImage ? (
                 <div className="space-y-4">
                   <div className="border rounded-md p-4 bg-muted/50 relative">
                     <img 
-                      src={tempPastedImage || pastedImage} 
+                      src={tempPastedImage || localPastedImage} 
                       alt="Pasted" 
                       className="max-h-64 mx-auto mb-4" 
                     />
@@ -223,7 +228,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           
           <CardFooter>
             <Button type="submit" className="w-full">
-              {tempPastedImage && !pastedImage ? "Process Image & Extract Text" : "Add to Vocabulary"}
+              {tempPastedImage && !localPastedImage ? "Process Image & Extract Text" : "Add to Vocabulary"}
             </Button>
           </CardFooter>
         </form>
