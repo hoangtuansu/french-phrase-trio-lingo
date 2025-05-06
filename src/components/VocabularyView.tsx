@@ -10,7 +10,16 @@ interface VocabularyViewProps {
 }
 
 const VocabularyView: React.FC<VocabularyViewProps> = ({ vocabulary, onDelete }) => {
-  if (vocabulary.length === 0) {
+  // Sort vocabulary by creation date (newest first) and get only the 5 most recent items
+  const recentVocabulary = [...vocabulary]
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at || Date.now());
+      const dateB = new Date(b.created_at || Date.now());
+      return dateB.getTime() - dateA.getTime();
+    })
+    .slice(0, 5);
+
+  if (recentVocabulary.length === 0) {
     return (
       <div className="text-center p-8 bg-muted/20 rounded-lg">
         <h3 className="text-lg font-medium mb-2">No vocabulary items yet</h3>
@@ -23,7 +32,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ vocabulary, onDelete })
 
   return (
     <div className="space-y-4">
-      {vocabulary.map((item) => (
+      {recentVocabulary.map((item) => (
         <Card key={item.id} className="overflow-hidden">
           <CardHeader>
             <div className="flex justify-between items-start">

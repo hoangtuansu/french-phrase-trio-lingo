@@ -5,7 +5,14 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Language } from '../types/language';
 
 interface VocabularyInputProps {
@@ -36,7 +43,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   const [word, setWord] = useState('');
   const [meaning, setMeaning] = useState('');
   const [context, setContext] = useState('');
-  const [activeTab, setActiveTab] = useState<'text' | 'image'>('text');
+  const [showExtractDialog, setShowExtractDialog] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +51,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
       onAddVocabulary(
         word.trim(), 
         meaning.trim(), 
-        activeTab === 'text' ? context.trim() : extractedText.trim(),
+        pastedImage ? extractedText.trim() : context.trim(),
         sourceLanguage,
         targetLanguage
       );
@@ -66,106 +73,113 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
             const reader = new FileReader();
             reader.onload = (event) => {
               setPastedImage(event.target?.result as string);
+              // Show the extract confirmation dialog
+              setShowExtractDialog(true);
             };
             reader.readAsDataURL(blob);
             // Prevent the image from being pasted into the textarea
             e.preventDefault();
-            setActiveTab('image');
           }
         }
       }
     }
   };
 
+  const handleConfirmExtractedText = () => {
+    setShowExtractDialog(false);
+    // The extracted text is already stored in the extractedText state
+  };
+
   return (
-    <Card className="w-full">
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4 pt-6">
-          <div className="space-y-2">
-            <Label htmlFor="word">Word/Phrase/Idiom</Label>
-            <Input 
-              id="word" 
-              value={word} 
-              onChange={(e) => setWord(e.target.value)}
-              placeholder="Enter word, phrase or idiom"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="meaning">Meaning</Label>
-            <Textarea 
-              id="meaning" 
-              value={meaning} 
-              onChange={(e) => setMeaning(e.target.value)}
-              placeholder="Enter the meaning"
-              className="min-h-[80px]"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="context">Context</Label>
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'text' | 'image')}>
-              <TabsList className="mb-2">
-                <TabsTrigger value="text">Text</TabsTrigger>
-                <TabsTrigger value="image">Image</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="text">
-                <Textarea 
-                  id="context" 
-                  value={context} 
-                  onChange={(e) => setContext(e.target.value)}
-                  placeholder="Enter context such as example sentence or paragraph"
-                  className="min-h-[120px]"
-                />
-              </TabsContent>
-              
-              <TabsContent value="image" className="space-y-4">
-                <div 
-                  className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer bg-muted/50"
-                  onPaste={handlePaste}
-                  tabIndex={0}
-                  onClick={() => document.getElementById('imageUploadArea')?.focus()}
-                  id="imageUploadArea"
-                >
-                  {pastedImage ? (
-                    <div className="space-y-4">
-                      <img src={pastedImage} alt="Pasted" className="max-h-64 mx-auto" />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={(e) => { 
-                          e.stopPropagation();
-                          setPastedImage(null);
-                        }}
-                      >
-                        Remove Image
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Paste an image with text (Ctrl+V/Cmd+V)
-                    </p>
-                  )}
+    <>
+      <Card className="w-full">
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4 pt-6">
+            <div className="space-y-2">
+              <Label htmlFor="word">Word/Phrase/Idiom</Label>
+              <Input 
+                id="word" 
+                value={word} 
+                onChange={(e) => setWord(e.target.value)}
+                placeholder="Enter word, phrase or idiom"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="meaning">Meaning</Label>
+              <Textarea 
+                id="meaning" 
+                value={meaning} 
+                onChange={(e) => setMeaning(e.target.value)}
+                placeholder="Enter the meaning"
+                className="min-h-[80px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="context">Context</Label>
+              {pastedImage ? (
+                <div className="space-y-4">
+                  <div className="border rounded-md p-4 bg-muted/50">
+                    <img src={pastedImage} alt="Pasted" className="max-h-64 mx-auto mb-4" />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        setPastedImage(null);
+                        setExtractedText('');
+                      }}
+                      className="w-full"
+                    >
+                      Remove Image
+                    </Button>
+                  </div>
                 </div>
-                {pastedImage && (
+              ) : (
+                <div 
+                  className="relative"
+                  onPaste={handlePaste}
+                >
                   <Textarea 
-                    value={extractedText} 
-                    onChange={(e) => setExtractedText(e.target.value)}
-                    placeholder="Extracted text will appear here (you can edit it)"
+                    id="context" 
+                    value={context} 
+                    onChange={(e) => setContext(e.target.value)}
+                    placeholder="Enter context such as example sentence or paragraph (or paste an image with Ctrl+V/Cmd+V)"
                     className="min-h-[120px]"
                   />
-                )}
-              </TabsContent>
-            </Tabs>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          
+          <CardFooter>
+            <Button type="submit" className="w-full">Add to Vocabulary</Button>
+          </CardFooter>
+        </form>
+      </Card>
+
+      <Dialog open={showExtractDialog} onOpenChange={setShowExtractDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Extracted Text</DialogTitle>
+            <DialogDescription>
+              Please review and edit the extracted text if needed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea 
+              value={extractedText} 
+              onChange={(e) => setExtractedText(e.target.value)}
+              placeholder="Extracted text will appear here (you can edit it)"
+              className="min-h-[120px]"
+            />
           </div>
-        </CardContent>
-        
-        <CardFooter>
-          <Button type="submit" className="w-full">Add to Vocabulary</Button>
-        </CardFooter>
-      </form>
-    </Card>
+          <DialogFooter>
+            <Button onClick={handleConfirmExtractedText}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
