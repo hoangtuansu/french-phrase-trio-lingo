@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,17 @@ import {
 } from "@/components/ui/dialog";
 import { Language } from '../types/language';
 import { X } from 'lucide-react';
+import Tesseract from 'tesseract.js';
+
+// Map of language to Tesseract language code
+const TESSERACT_LANG_CODES: Record<Language, string> = {
+  english: 'eng',
+  vietnamese: 'vie',
+  spanish: 'spa',
+  german: 'deu',
+  italian: 'ita',
+  french: 'fra'
+};
 
 interface VocabularyInputProps {
   onAddVocabulary: (
@@ -46,9 +57,21 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   const [context, setContext] = useState('');
   const [showExtractDialog, setShowExtractDialog] = useState(false);
   const [tempPastedImage, setTempPastedImage] = useState<string | null>(null);
-  // New state to manage image specifically for this component
+  // Local state for managing images and text
   const [localPastedImage, setLocalPastedImage] = useState<string | null>(null);
   const [localExtractedText, setLocalExtractedText] = useState('');
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  // Effect to maintain state when switching views
+  useEffect(() => {
+    // If there's already a pasted image from parent state, use it
+    if (pastedImage && !localPastedImage) {
+      setLocalPastedImage(pastedImage);
+    }
+    if (extractedText && !localExtractedText) {
+      setLocalExtractedText(extractedText);
+    }
+  }, [pastedImage, extractedText, localPastedImage, localExtractedText]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +79,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
     // If there's a temporary pasted image but no dialog shown yet, show the dialog
     if (tempPastedImage && !showExtractDialog) {
       setLocalPastedImage(tempPastedImage);
-      setShowExtractDialog(true);
+      startImageProcessing(tempPastedImage);
       return;
     }
     
@@ -98,10 +121,45 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
     }
   };
 
+  const mockExtractTextFromImage = async (imageUrl: string): Promise<string> => {
+    setIsProcessingImage(true);
+    try {
+      // Convert data URL to Blob
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Use the source language to determine the Tesseract language code
+      const langCode = TESSERACT_LANG_CODES[sourceLanguage] || 'eng'; // default to English if not found
+
+      const { data: { text } } = await Tesseract.recognize(
+        blob,
+        langCode,
+        {
+          logger: m => console.log(m)
+        }
+      );
+      return text;
+    } catch (error) {
+      console.error("Error extracting text:", error);
+      return "Error extracting text. Please try again.";
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
+  const startImageProcessing = async (imageUrl: string) => {
+    try {
+      const text = await mockExtractTextFromImage(imageUrl);
+      setLocalExtractedText(text);
+      setShowExtractDialog(true);
+    } catch (error) {
+      console.error("Error processing image:", error);
+    }
+  };
+
   const handleConfirmExtractedText = () => {
     setShowExtractDialog(false);
-    setLocalExtractedText(extractedText);
-    // Don't update the shared state from parent component
+    // Only update local state, not parent state
   };
 
   const clearWord = () => {
@@ -227,8 +285,16 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           </CardContent>
           
           <CardFooter>
-            <Button type="submit" className="w-full">
-              {tempPastedImage && !localPastedImage ? "Process Image & Extract Text" : "Add to Vocabulary"}
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isProcessingImage}
+            >
+              {isProcessingImage 
+                ? "Processing Image..." 
+                : (tempPastedImage && !localPastedImage 
+                  ? "Process Image & Extract Text" 
+                  : "Add to Vocabulary")}
             </Button>
           </CardFooter>
         </form>
@@ -244,8 +310,8 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           </DialogHeader>
           <div className="py-4">
             <Textarea 
-              value={extractedText} 
-              onChange={(e) => setExtractedText(e.target.value)}
+              value={localExtractedText} 
+              onChange={(e) => setLocalExtractedText(e.target.value)}
               placeholder="Extracted text will appear here (you can edit it)"
               className="min-h-[120px]"
             />
