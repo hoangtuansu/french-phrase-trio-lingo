@@ -44,9 +44,18 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   const [meaning, setMeaning] = useState('');
   const [context, setContext] = useState('');
   const [showExtractDialog, setShowExtractDialog] = useState(false);
+  const [tempPastedImage, setTempPastedImage] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If there's a temporary pasted image but no dialog shown yet, show the dialog
+    if (tempPastedImage && !showExtractDialog) {
+      setPastedImage(tempPastedImage);
+      setShowExtractDialog(true);
+      return;
+    }
+    
     if (word.trim() && meaning.trim()) {
       onAddVocabulary(
         word.trim(), 
@@ -60,6 +69,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
       setContext('');
       setPastedImage(null);
       setExtractedText('');
+      setTempPastedImage(null);
     }
   };
 
@@ -72,9 +82,8 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           if (blob) {
             const reader = new FileReader();
             reader.onload = (event) => {
-              setPastedImage(event.target?.result as string);
-              // Show the extract confirmation dialog
-              setShowExtractDialog(true);
+              // Just store the image temporarily, don't immediately show dialog
+              setTempPastedImage(event.target?.result as string);
             };
             reader.readAsDataURL(blob);
             // Prevent the image from being pasted into the textarea
@@ -128,6 +137,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
                       onClick={() => {
                         setPastedImage(null);
                         setExtractedText('');
+                        setTempPastedImage(null);
                       }}
                       className="w-full"
                     >
@@ -147,13 +157,20 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
                     placeholder="Enter context such as example sentence or paragraph (or paste an image with Ctrl+V/Cmd+V)"
                     className="min-h-[120px]"
                   />
+                  {tempPastedImage && (
+                    <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background px-2 py-1 rounded border">
+                      Image ready. Submit to extract text.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </CardContent>
           
           <CardFooter>
-            <Button type="submit" className="w-full">Add to Vocabulary</Button>
+            <Button type="submit" className="w-full">
+              {tempPastedImage && !pastedImage ? "Process Image & Extract Text" : "Add to Vocabulary"}
+            </Button>
           </CardFooter>
         </form>
       </Card>
