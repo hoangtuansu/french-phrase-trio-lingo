@@ -187,55 +187,6 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
-              <Label htmlFor="word">Word/Phrase/Idiom</Label>
-              <div className="relative">
-                <Input 
-                  id="word" 
-                  value={word} 
-                  onChange={(e) => setWord(e.target.value)}
-                  placeholder="Enter word, phrase or idiom"
-                />
-                {word && (
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
-                    onClick={clearWord}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Clear</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="meaning">Meaning</Label>
-              <div className="relative">
-                <Textarea 
-                  id="meaning" 
-                  value={meaning} 
-                  onChange={(e) => setMeaning(e.target.value)}
-                  placeholder="Enter the meaning"
-                  className="min-h-[80px] pr-10"
-                />
-                {meaning && (
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute right-2 top-3 h-6 w-6 p-0" 
-                    onClick={clearMeaning}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Clear</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
               <Label htmlFor="context">Context</Label>
               {tempPastedImage || localPastedImage ? (
                 <div className="space-y-4">
@@ -282,6 +233,59 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
                 </div>
               )}
             </div>
+            
+            <div className="grid grid-cols-2 gap-2">  
+
+            <div className="space-y-2">
+              <Label htmlFor="word">Word/Phrase/Idiom</Label>
+              <div className="relative">
+                <Input 
+                  id="word" 
+                  value={word} 
+                  onChange={(e) => setWord(e.target.value)}
+                  placeholder="Enter word, phrase or idiom"
+                />
+                {word && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
+                    onClick={clearWord}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Clear</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="meaning">Meaning</Label>
+              <div className="relative">
+                <Input 
+                  id="meaning" 
+                  value={meaning} 
+                  onChange={(e) => setMeaning(e.target.value)}
+                  placeholder="Enter the meaning"
+                />
+                {meaning && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-3 h-6 w-6 p-0" 
+                    onClick={clearMeaning}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Clear</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            </div>
+
           </CardContent>
           
           <CardFooter>
