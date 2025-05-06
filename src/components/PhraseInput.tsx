@@ -11,57 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Language, TranslationResult, TranslationMode } from '../types/language';
 import { useToast } from "@/hooks/use-toast";
 import Tesseract from 'tesseract.js';
-interface PhraseInputProps {
-  onAddPhrase: (phrase: string, languages: Language[], mode: TranslationMode, sourceLanguage: Language) => void;
-  selectedLanguages: Language[];
-  onLanguagesChange: (languages: Language[]) => void;
-  translationResults: TranslationResult[] | null;
-  inputText: string;
-  onInputTextChange: (text: string) => void;
-  pastedImage: string | null;
-  setPastedImage: (image: string | null) => void;
-  extractedText: string;
-  setExtractedText: (text: string) => void;
-  sourceLanguage: Language;
-  onSourceLanguageChange: (language: Language) => void;
-  translationMode: TranslationMode;
-  onTranslationModeChange: (mode: TranslationMode) => void;
-}
-const AVAILABLE_LANGUAGES: {
-  value: Language;
-  label: string;
-}[] = [{
-  value: 'english',
-  label: 'English'
-}, {
-  value: 'vietnamese',
-  label: 'Vietnamese'
-}, {
-  value: 'spanish',
-  label: 'Spanish'
-}, {
-  value: 'german',
-  label: 'German'
-}, {
-  value: 'italian',
-  label: 'Italian'
-}, {
-  value: 'french',
-  label: 'French'
-}];
-const TRANSLATION_MODES = [{
-  value: 'simple',
-  label: 'Simple',
-  description: 'Basic translation only'
-}, {
-  value: 'advanced',
-  label: 'Advanced',
-  description: 'Includes examples and idioms'
-}, {
-  value: 'learning',
-  label: 'Learning',
-  description: 'Adds grammar explanations'
-}];
 
 // Map of language to Tesseract language code
 const TESSERACT_LANG_CODES: Record<Language, string> = {
@@ -72,6 +21,7 @@ const TESSERACT_LANG_CODES: Record<Language, string> = {
   italian: 'ita',
   french: 'fra'
 };
+
 const PhraseInput: React.FC<PhraseInputProps> = ({
   onAddPhrase,
   selectedLanguages,
@@ -95,6 +45,7 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
   const {
     toast
   } = useToast();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputText.trim() && selectedLanguages.length > 0) {
@@ -370,4 +321,5 @@ const PhraseInput: React.FC<PhraseInputProps> = ({
       </Dialog>
     </div>;
 };
+
 export default PhraseInput;

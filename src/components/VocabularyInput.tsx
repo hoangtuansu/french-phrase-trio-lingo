@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Language } from '../types/language';
+import { X } from 'lucide-react';
 
 interface VocabularyInputProps {
   onAddVocabulary: (
@@ -82,7 +83,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           if (blob) {
             const reader = new FileReader();
             reader.onload = (event) => {
-              // Just store the image temporarily, don't immediately show dialog
+              // Show the image immediately when pasted
               setTempPastedImage(event.target?.result as string);
             };
             reader.readAsDataURL(blob);
@@ -99,6 +100,24 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
     // The extracted text is already stored in the extractedText state
   };
 
+  const clearWord = () => {
+    setWord('');
+  };
+
+  const clearMeaning = () => {
+    setMeaning('');
+  };
+
+  const clearContext = () => {
+    setContext('');
+  };
+
+  const clearImage = () => {
+    setPastedImage(null);
+    setExtractedText('');
+    setTempPastedImage(null);
+  };
+
   return (
     <>
       <Card className="w-full">
@@ -106,61 +125,96 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label htmlFor="word">Word/Phrase/Idiom</Label>
-              <Input 
-                id="word" 
-                value={word} 
-                onChange={(e) => setWord(e.target.value)}
-                placeholder="Enter word, phrase or idiom"
-              />
+              <div className="relative">
+                <Input 
+                  id="word" 
+                  value={word} 
+                  onChange={(e) => setWord(e.target.value)}
+                  placeholder="Enter word, phrase or idiom"
+                />
+                {word && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
+                    onClick={clearWord}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Clear</span>
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="meaning">Meaning</Label>
-              <Textarea 
-                id="meaning" 
-                value={meaning} 
-                onChange={(e) => setMeaning(e.target.value)}
-                placeholder="Enter the meaning"
-                className="min-h-[80px]"
-              />
+              <div className="relative">
+                <Textarea 
+                  id="meaning" 
+                  value={meaning} 
+                  onChange={(e) => setMeaning(e.target.value)}
+                  placeholder="Enter the meaning"
+                  className="min-h-[80px] pr-10"
+                />
+                {meaning && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-3 h-6 w-6 p-0" 
+                    onClick={clearMeaning}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Clear</span>
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="context">Context</Label>
-              {pastedImage ? (
+              {tempPastedImage || pastedImage ? (
                 <div className="space-y-4">
-                  <div className="border rounded-md p-4 bg-muted/50">
-                    <img src={pastedImage} alt="Pasted" className="max-h-64 mx-auto mb-4" />
+                  <div className="border rounded-md p-4 bg-muted/50 relative">
+                    <img 
+                      src={tempPastedImage || pastedImage} 
+                      alt="Pasted" 
+                      className="max-h-64 mx-auto mb-4" 
+                    />
                     <Button 
                       type="button" 
-                      variant="outline" 
-                      onClick={() => {
-                        setPastedImage(null);
-                        setExtractedText('');
-                        setTempPastedImage(null);
-                      }}
-                      className="w-full"
+                      variant="ghost" 
+                      size="sm" 
+                      className="absolute top-2 right-2 h-6 w-6 p-0 bg-white/70 hover:bg-white/90" 
+                      onClick={clearImage}
                     >
-                      Remove Image
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Remove Image</span>
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div 
-                  className="relative"
-                  onPaste={handlePaste}
-                >
+                <div className="relative">
                   <Textarea 
                     id="context" 
                     value={context} 
                     onChange={(e) => setContext(e.target.value)}
                     placeholder="Enter context such as example sentence or paragraph (or paste an image with Ctrl+V/Cmd+V)"
-                    className="min-h-[120px]"
+                    className="min-h-[120px] pr-10"
+                    onPaste={handlePaste}
                   />
-                  {tempPastedImage && (
-                    <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background px-2 py-1 rounded border">
-                      Image ready. Submit to extract text.
-                    </div>
+                  {context && (
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      className="absolute right-2 top-3 h-6 w-6 p-0" 
+                      onClick={clearContext}
+                    >
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Clear</span>
+                    </Button>
                   )}
                 </div>
               )}
