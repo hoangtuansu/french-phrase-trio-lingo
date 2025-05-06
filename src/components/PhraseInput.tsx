@@ -12,6 +12,23 @@ import type { Language, TranslationResult, TranslationMode } from '../types/lang
 import { useToast } from "@/hooks/use-toast";
 import Tesseract from 'tesseract.js';
 
+// Translation language labels
+const AVAILABLE_LANGUAGES: { value: Language; label: string }[] = [
+  { value: 'english', label: 'English' },
+  { value: 'vietnamese', label: 'Vietnamese' },
+  { value: 'spanish', label: 'Spanish' },
+  { value: 'german', label: 'German' },
+  { value: 'italian', label: 'Italian' },
+  { value: 'french', label: 'French' },
+];
+
+// Translation modes for the application
+const TRANSLATION_MODES: { value: TranslationMode; label: string; description: string }[] = [
+  { value: 'simple', label: 'Simple', description: 'Basic translation with just the text' },
+  { value: 'advanced', label: 'Advanced', description: 'Translation with examples and idioms' },
+  { value: 'learning', label: 'Learning', description: 'Full translation with grammar notes for learning' },
+];
+
 // Map of language to Tesseract language code
 const TESSERACT_LANG_CODES: Record<Language, string> = {
   english: 'eng',
@@ -21,6 +38,23 @@ const TESSERACT_LANG_CODES: Record<Language, string> = {
   italian: 'ita',
   french: 'fra'
 };
+
+interface PhraseInputProps {
+  onAddPhrase: (text: string, languages: Language[], mode: TranslationMode, sourceLanguage: Language) => void;
+  selectedLanguages: Language[];
+  onLanguagesChange: (languages: Language[]) => void;
+  translationResults: TranslationResult[] | null;
+  inputText: string;
+  onInputTextChange: (text: string) => void;
+  pastedImage: string | null;
+  setPastedImage: (imageUrl: string | null) => void;
+  extractedText: string;
+  setExtractedText: (text: string) => void;
+  sourceLanguage: Language;
+  onSourceLanguageChange: (language: Language) => void;
+  translationMode: TranslationMode;
+  onTranslationModeChange: (mode: TranslationMode) => void;
+}
 
 const PhraseInput: React.FC<PhraseInputProps> = ({
   onAddPhrase,
