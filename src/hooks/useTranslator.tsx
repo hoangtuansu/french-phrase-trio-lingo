@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +7,7 @@ import type { Language, TranslationResult, TranslationMode, Translation, Vocabul
 import { mockTranslate } from '../utils/translationUtils';
 
 export const useTranslator = () => {
-  const [activeView, setActiveView] = useState<'add' | 'history' | 'vocabulary'>('add');
+  const [activeView, setActiveView] = useState<'add' | 'history' | 'vocabulary' | 'review'>('add');
   const [isTitleCollapsed, setIsTitleCollapsed] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();

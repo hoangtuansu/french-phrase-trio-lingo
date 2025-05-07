@@ -5,6 +5,7 @@ import Navigation from '../components/Navigation';
 import HistoryView from '../components/HistoryView';
 import VocabularyInput from '../components/VocabularyInput';
 import VocabularyView from '../components/VocabularyView';
+import ReviewView from '../components/ReviewView';
 import Header from '../components/Header';
 import { useTranslator } from '../hooks/useTranslator';
 import { VocabularyItem } from '../types/language';
@@ -88,6 +89,11 @@ const Index = () => {
               phrases={phrases} 
               onDelete={onDelete} 
               selectedLanguages={selectedLanguages} 
+            />
+          ) : activeView === 'review' ? (
+            <ReviewView 
+              vocabulary={vocabulary}
+              onEdit={handleEditVocabulary}
             />
           ) : (
             <div className="space-y-8">
