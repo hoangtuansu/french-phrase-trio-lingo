@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Language } from '../types/language';
-import { X } from 'lucide-react';
+import { Language, VocabularyItem } from '../types/language';
+import { Plus, X, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import Tesseract from 'tesseract.js';
-
 
 const TESSERACT_LANG_CODES: Record<Language, string> = {
   english: 'eng',
@@ -27,6 +26,12 @@ const TESSERACT_LANG_CODES: Record<Language, string> = {
   italian: 'ita',
   french: 'fra'
 };
+
+interface WordMeaningPair {
+  id: string;
+  word: string;
+  meaning: string;
+}
 
 interface VocabularyInputProps {
   onAddVocabulary: (
@@ -40,6 +45,8 @@ interface VocabularyInputProps {
   targetLanguage: Language;
   extractedText: string;
   setExtractedText: (text: string) => void;
+  editingItem?: VocabularyItem | null;
+  setEditingItem?: (item: VocabularyItem | null) => void;
 }
 
 const VocabularyInput: React.FC<VocabularyInputProps> = ({
@@ -48,19 +55,60 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   targetLanguage,
   extractedText,
   setExtractedText,
+  editingItem = null,
+  setEditingItem = () => {},
 }) => {
-  const [word, setWord] = useState('');
-  const [meaning, setMeaning] = useState('');
   const [context, setContext] = useState('');
   const [showExtractDialog, setShowExtractDialog] = useState(false);
   const [tempPastedImage, setTempPastedImage] = useState<string | null>(null);
-  // New state to manage image specifically for this component
   const [localPastedImage, setLocalPastedImage] = useState<string | null>(null);
   const [localExtractedText, setLocalExtractedText] = useState('');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const {
-      toast
-    } = useToast();
+  const { toast } = useToast();
+  
+  // State for dynamic word-meaning pairs
+  const [wordMeaningPairs, setWordMeaningPairs] = useState<WordMeaningPair[]>([
+    { id: Date.now().toString(), word: '', meaning: '' }
+  ]);
+
+  // Effect to handle editing mode
+  useEffect(() => {
+    if (editingItem) {
+      setContext(editingItem.context || '');
+      setWordMeaningPairs([{ 
+        id: Date.now().toString(), 
+        word: editingItem.word, 
+        meaning: editingItem.meaning 
+      }]);
+    }
+  }, [editingItem]);
+
+  const handleAddWordMeaningPair = () => {
+    setWordMeaningPairs([
+      ...wordMeaningPairs,
+      { id: Date.now().toString(), word: '', meaning: '' }
+    ]);
+  };
+
+  const handleRemoveWordMeaningPair = (id: string) => {
+    if (wordMeaningPairs.length > 1) {
+      setWordMeaningPairs(wordMeaningPairs.filter(pair => pair.id !== id));
+    } else {
+      toast({
+        title: "Cannot remove",
+        description: "You need at least one word-meaning pair.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateWordMeaningPair = (id: string, field: 'word' | 'meaning', value: string) => {
+    setWordMeaningPairs(
+      wordMeaningPairs.map(pair => 
+        pair.id === id ? { ...pair, [field]: value } : pair
+      )
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,43 +120,61 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
       return;
     }
     
-    if (word.trim() && meaning.trim()) {
+    // Validate all pairs
+    const invalidPairs = wordMeaningPairs.filter(pair => !pair.word.trim() || !pair.meaning.trim());
+    if (invalidPairs.length > 0) {
+      toast({
+        title: "Incomplete entries",
+        description: "Please fill in all word and meaning fields before adding.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Add all valid word-meaning pairs
+    wordMeaningPairs.forEach(pair => {
       onAddVocabulary(
-        word.trim(), 
-        meaning.trim(), 
+        pair.word.trim(), 
+        pair.meaning.trim(), 
         localPastedImage ? localExtractedText.trim() : context.trim(),
         sourceLanguage,
         targetLanguage
       );
-      setWord('');
-      setMeaning('');
+    });
+
+    // Reset the form
+    if (!editingItem) {
+      setWordMeaningPairs([{ id: Date.now().toString(), word: '', meaning: '' }]);
       setContext('');
       setLocalPastedImage(null);
       setLocalExtractedText('');
       setTempPastedImage(null);
+    } else {
+      // If we were in edit mode, exit edit mode
+      setEditingItem(null);
     }
   };
 
-  const mockExtractTextFromImage = async (file: File): Promise<string> => {
-      setIsProcessingImage(true);
-      try {
-        // Use the source language to determine the Tesseract language code
-        const langCode = TESSERACT_LANG_CODES[sourceLanguage] || 'eng'; // default to English if not found
-  
-        const {
-          data: {
-            text
-          }
-        } = await Tesseract.recognize(file, langCode,
-        // language code based on selected source language
-        {
-          logger: m => console.log(m)
-        });
-        return text;
-      } finally {
-        setIsProcessingImage(false);
-      }
-    };
+  const extractTextFromImage = async (file: File): Promise<string> => {
+    setIsProcessingImage(true);
+    try {
+      // Use the source language to determine the Tesseract language code
+      const langCode = TESSERACT_LANG_CODES[sourceLanguage] || 'eng'; // default to English if not found
+
+      const {
+        data: {
+          text
+        }
+      } = await Tesseract.recognize(file, langCode,
+      // language code based on selected source language
+      {
+        logger: m => console.log(m)
+      });
+      return text;
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
 
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -132,7 +198,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
               };
               reader.readAsDataURL(blob);
               
-              const extractedText = await mockExtractTextFromImage(blob);
+              const extractedText = await extractTextFromImage(blob);
               setExtractedText(extractedText);
               setLocalExtractedText(extractedText); // Initialize edited text with extracted text
               setShowExtractDialog(true);
@@ -149,7 +215,6 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
                 variant: "destructive"
               });
             }
-
           }
         }
       }
@@ -159,15 +224,6 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   const handleConfirmExtractedText = () => {
     setShowExtractDialog(false);
     setLocalExtractedText(extractedText);
-    // Don't update the shared state from parent component
-  };
-
-  const clearWord = () => {
-    setWord('');
-  };
-
-  const clearMeaning = () => {
-    setMeaning('');
   };
 
   const clearContext = () => {
@@ -178,14 +234,13 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
     setLocalPastedImage(null);
     setLocalExtractedText('');
     setTempPastedImage(null);
-    // Don't clear the parent's image state
   };
 
   return (
     <>
       <Card className="w-full">
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4 pt-6">
+          <CardContent className="space-y-6 pt-6">
             <div className="space-y-2">
               <Label htmlFor="context">Context</Label>
               {tempPastedImage || localPastedImage ? (
@@ -234,63 +289,107 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
               )}
             </div>
             
-            <div className="grid grid-cols-2 gap-2">  
-
-            <div className="space-y-2">
-              <Label htmlFor="word">Word/Phrase/Idiom</Label>
-              <div className="relative">
-                <Input 
-                  id="word" 
-                  value={word} 
-                  onChange={(e) => setWord(e.target.value)}
-                  placeholder="Enter word, phrase or idiom"
-                />
-                {word && (
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
-                    onClick={clearWord}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-base">Words & Meanings</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAddWordMeaningPair}
+                  className="flex items-center gap-1"
+                >
+                  <Plus size={16} />
+                  Add Pair
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {wordMeaningPairs.map((pair, index) => (
+                  <div 
+                    key={pair.id} 
+                    className="grid grid-cols-[1fr,1fr,auto] gap-3 items-start bg-muted/20 p-3 rounded-lg"
                   >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Clear</span>
-                  </Button>
-                )}
+                    <div className="space-y-2">
+                      <Label htmlFor={`word-${pair.id}`} className="text-sm">
+                        Word/Phrase/Idiom
+                      </Label>
+                      <div className="relative">
+                        <Input 
+                          id={`word-${pair.id}`} 
+                          value={pair.word} 
+                          onChange={(e) => handleUpdateWordMeaningPair(pair.id, 'word', e.target.value)}
+                          placeholder="Enter word, phrase or idiom"
+                        />
+                        {pair.word && (
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
+                            onClick={() => handleUpdateWordMeaningPair(pair.id, 'word', '')}
+                          >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Clear</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`meaning-${pair.id}`} className="text-sm">
+                        Meaning
+                      </Label>
+                      <div className="relative">
+                        <Input 
+                          id={`meaning-${pair.id}`} 
+                          value={pair.meaning} 
+                          onChange={(e) => handleUpdateWordMeaningPair(pair.id, 'meaning', e.target.value)}
+                          placeholder="Enter the meaning"
+                        />
+                        {pair.meaning && (
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
+                            onClick={() => handleUpdateWordMeaningPair(pair.id, 'meaning', '')}
+                          >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Clear</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="pt-8">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveWordMeaningPair(pair.id)}
+                        className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10"
+                        disabled={wordMeaningPairs.length === 1}
+                      >
+                        <Trash2 size={16} />
+                        <span className="sr-only">Remove pair</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="meaning">Meaning</Label>
-              <div className="relative">
-                <Input 
-                  id="meaning" 
-                  value={meaning} 
-                  onChange={(e) => setMeaning(e.target.value)}
-                  placeholder="Enter the meaning"
-                />
-                {meaning && (
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute right-2 top-3 h-6 w-6 p-0" 
-                    onClick={clearMeaning}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Clear</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            </div>
-
           </CardContent>
           
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isProcessingImage}>
-              {tempPastedImage && !localPastedImage ? "Process Image & Extract Text" : "Add to Vocabulary"}
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isProcessingImage}
+            >
+              {tempPastedImage && !localPastedImage 
+                ? "Process Image & Extract Text" 
+                : editingItem 
+                  ? "Update Vocabulary" 
+                  : "Add to Vocabulary"}
             </Button>
           </CardFooter>
         </form>
