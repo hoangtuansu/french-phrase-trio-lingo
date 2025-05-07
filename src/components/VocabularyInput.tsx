@@ -311,9 +311,11 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
                     className="grid grid-cols-[1fr,1fr,auto] gap-3 items-start bg-muted/20 p-3 rounded-lg"
                   >
                     <div className="space-y-2">
-                      <Label htmlFor={`word-${pair.id}`} className="text-sm">
-                        Word/Phrase/Idiom
-                      </Label>
+                      {index === 0 && (
+                        <Label htmlFor={`word-${pair.id}`} className="text-sm">
+                          Word/Phrase/Idiom
+                        </Label>
+                      )}
                       <div className="relative">
                         <Input 
                           id={`word-${pair.id}`} 
@@ -336,9 +338,11 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`meaning-${pair.id}`} className="text-sm">
-                        Meaning
-                      </Label>
+                      {index === 0 && (
+                        <Label htmlFor={`meaning-${pair.id}`} className="text-sm">
+                          Meaning
+                        </Label>
+                      )}
                       <div className="relative">
                         <Input 
                           id={`meaning-${pair.id}`} 
@@ -360,7 +364,7 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
                         )}
                       </div>
                     </div>
-                    <div className="pt-8">
+                    <div className={index === 0 ? "pt-8" : "pt-0"}>
                       <Button
                         type="button"
                         variant="ghost"
