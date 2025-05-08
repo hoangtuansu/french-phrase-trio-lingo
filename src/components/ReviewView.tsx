@@ -5,22 +5,64 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { VocabularyItem } from '../types/language';
+import { VocabularyItem, ContextItem } from '../types/language';
 import { ListCheck, Filter, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface ReviewViewProps {
   vocabulary: VocabularyItem[];
+  contexts: ContextItem[];
   onEdit: (item: VocabularyItem) => void;
 }
 
-const ReviewView: React.FC<ReviewViewProps> = ({ vocabulary, onEdit }) => {
-  const [recentCount, setRecentCount] = useState(5);
-  const [randomCount, setRandomCount] = useState(3);
-  const [keyword, setKeyword] = useState('');
+const ReviewView: React.FC<ReviewViewProps> = ({ vocabulary, contexts, onEdit }) => {
+  // Use localStorage to persist review settings
+  const [recentCount, setRecentCount] = useState(() => {
+    const savedCount = localStorage.getItem('reviewRecentCount');
+    return savedCount ? parseInt(savedCount, 10) : 5;
+  });
+  
+  const [randomCount, setRandomCount] = useState(() => {
+    const savedCount = localStorage.getItem('reviewRandomCount');
+    return savedCount ? parseInt(savedCount, 10) : 3;
+  });
+  
+  const [keyword, setKeyword] = useState(() => {
+    return localStorage.getItem('reviewKeyword') || '';
+  });
+  
   const [reviewItems, setReviewItems] = useState<VocabularyItem[]>([]);
-  const [reviewMode, setReviewMode] = useState<'recent' | 'random' | 'search'>('recent');
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  
+  const [reviewMode, setReviewMode] = useState<'recent' | 'random' | 'search'>(() => {
+    const savedMode = localStorage.getItem('reviewMode');
+    return (savedMode as 'recent' | 'random' | 'search') || 'recent';
+  });
+  
+  const [isFiltersOpen, setIsFiltersOpen] = useState(() => {
+    const savedState = localStorage.getItem('reviewFiltersOpen');
+    return savedState ? savedState === 'true' : false;
+  });
+
+  // Persist settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('reviewRecentCount', recentCount.toString());
+  }, [recentCount]);
+
+  useEffect(() => {
+    localStorage.setItem('reviewRandomCount', randomCount.toString());
+  }, [randomCount]);
+
+  useEffect(() => {
+    localStorage.setItem('reviewKeyword', keyword);
+  }, [keyword]);
+
+  useEffect(() => {
+    localStorage.setItem('reviewMode', reviewMode);
+  }, [reviewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('reviewFiltersOpen', isFiltersOpen.toString());
+  }, [isFiltersOpen]);
 
   // Function to get recent vocabulary items
   const getRecentVocabulary = () => {
@@ -50,7 +92,7 @@ const ReviewView: React.FC<ReviewViewProps> = ({ vocabulary, onEdit }) => {
     return vocabulary.filter(item => 
       item.word.toLowerCase().includes(keyword.toLowerCase()) || 
       item.meaning.toLowerCase().includes(keyword.toLowerCase()) ||
-      (item.context && item.context.toLowerCase().includes(keyword.toLowerCase()))
+      (item.context && item.context.text && item.context.text.toLowerCase().includes(keyword.toLowerCase()))
     );
   };
 

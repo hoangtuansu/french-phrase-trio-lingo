@@ -27,6 +27,7 @@ const Index = () => {
     translationResults,
     phrases,
     vocabulary,
+    contexts,
     inputText,
     setInputText,
     pastedImage,
@@ -93,6 +94,7 @@ const Index = () => {
           ) : activeView === 'review' ? (
             <ReviewView 
               vocabulary={vocabulary}
+              contexts={contexts || []}
               onEdit={handleEditVocabulary}
             />
           ) : (

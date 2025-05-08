@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { History, Bell, BookOpen, ListCheck } from "lucide-react";
+import { History, Bell, BookOpen, ListCheck, List } from "lucide-react";
 
 interface NavigationProps {
   activeView: 'add' | 'history' | 'vocabulary' | 'review';

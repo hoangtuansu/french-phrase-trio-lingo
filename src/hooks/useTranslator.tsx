@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { getPhrases, savePhraseToDb, deletePhrase, saveVocabularyToDb, getVocabulary, deleteVocabularyItem } from '../utils/supabase';
-import type { Language, TranslationResult, TranslationMode, Translation, VocabularyItem } from '../types/language';
+import type { Language, TranslationResult, TranslationMode, Translation, VocabularyItem, ContextItem } from '../types/language';
 import { mockTranslate } from '../utils/translationUtils';
 
 export const useTranslator = () => {
@@ -11,6 +10,9 @@ export const useTranslator = () => {
   const [isTitleCollapsed, setIsTitleCollapsed] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check if Supabase credentials are missing
+  const isMissingCredentials = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   // Initialize selectedLanguages from localStorage or default to english and vietnamese
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>(() => {
@@ -70,6 +72,9 @@ export const useTranslator = () => {
     queryKey: ['vocabulary'],
     queryFn: getVocabulary,
   });
+
+  // Mock contexts data until we have a real implementation
+  const contexts: ContextItem[] = [];
 
   const addPhraseMutation = useMutation({
     mutationFn: (phraseData: { 
@@ -273,6 +278,7 @@ export const useTranslator = () => {
     translationResults,
     phrases,
     vocabulary,
+    contexts,
     isLoading: isLoadingPhrases || isLoadingVocabulary,
     inputText,
     setInputText,

@@ -84,9 +84,10 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   }, [editingItem]);
 
   const handleAddWordMeaningPair = () => {
+    // Add new pair at the top instead of bottom
     setWordMeaningPairs([
-      ...wordMeaningPairs,
-      { id: Date.now().toString(), word: '', meaning: '' }
+      { id: Date.now().toString(), word: '', meaning: '' },
+      ...wordMeaningPairs
     ]);
   };
 
