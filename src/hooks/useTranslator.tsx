@@ -2,11 +2,16 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { getPhrases, savePhraseToDb, deletePhrase, saveVocabularyToDb, getVocabulary, deleteVocabularyItem } from '../utils/supabase';
-import type { Language, TranslationResult, TranslationMode, Translation, VocabularyItem, ContextItem } from '../types/language';
+import type { Language, TranslationResult, TranslationMode, Translation, VocabularyItem } from '../types/language';
 import { mockTranslate } from '../utils/translationUtils';
 
 export const useTranslator = () => {
-  const [activeView, setActiveView] = useState<'add' | 'history' | 'vocabulary' | 'review'>('add');
+  // Check localStorage for activeView or default to 'add'
+  const [activeView, setActiveView] = useState<'add' | 'history' | 'vocabulary' | 'review'>(() => {
+    const savedView = localStorage.getItem('activeView');
+    return (savedView as 'add' | 'history' | 'vocabulary' | 'review') || 'add';
+  });
+  
   const [isTitleCollapsed, setIsTitleCollapsed] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -43,6 +48,11 @@ export const useTranslator = () => {
   const [pastedImage, setPastedImage] = useState<string | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
 
+  // Save activeView to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('activeView', activeView);
+  }, [activeView]);
+
   // Save selectedLanguages to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('selectedLanguages', JSON.stringify(selectedLanguages));
@@ -73,8 +83,8 @@ export const useTranslator = () => {
     queryFn: getVocabulary,
   });
 
-  // Mock contexts data until we have a real implementation
-  const contexts: ContextItem[] = [];
+  // Empty contexts array (will be replaced with real data later)
+  const contexts = [];
 
   const addPhraseMutation = useMutation({
     mutationFn: (phraseData: { 
@@ -148,8 +158,14 @@ export const useTranslator = () => {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['vocabulary'] });
+      
+      // Add the new item at the top of the list
+      queryClient.setQueryData(['vocabulary'], (oldData: VocabularyItem[] = []) => {
+        return [data, ...oldData.filter(item => item.id !== data.id)];
+      });
+      
       toast({
         title: "Vocabulary added",
         description: "Your vocabulary item has been saved successfully.",
@@ -240,9 +256,9 @@ export const useTranslator = () => {
         created_at: new Date().toISOString()
       };
       
-      // Update local state
-      queryClient.setQueryData(['vocabulary'], (old: VocabularyItem[] | undefined) => {
-        return [mockItem, ...(old || [])];
+      // Add the new item at the top of the list
+      queryClient.setQueryData(['vocabulary'], (oldData: VocabularyItem[] = []) => {
+        return [mockItem, ...oldData];
       });
       
       toast({

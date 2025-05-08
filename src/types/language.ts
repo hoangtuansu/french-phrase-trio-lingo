@@ -15,6 +15,13 @@ export interface TranslationResult {
   translations: Record<Language, Translation>;
 }
 
+export interface ContextItem {
+  id?: number;
+  text: string;
+  sourceLanguage: Language;
+  created_at?: string;
+}
+
 export interface VocabularyItem {
   id?: number;
   word: string;

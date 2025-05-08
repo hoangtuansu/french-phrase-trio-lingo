@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,7 +91,7 @@ const ReviewView: React.FC<ReviewViewProps> = ({ vocabulary, contexts, onEdit })
     return vocabulary.filter(item => 
       item.word.toLowerCase().includes(keyword.toLowerCase()) || 
       item.meaning.toLowerCase().includes(keyword.toLowerCase()) ||
-      (item.context && item.context.text && item.context.text.toLowerCase().includes(keyword.toLowerCase()))
+      (item.context && item.context.toLowerCase().includes(keyword.toLowerCase()))
     );
   };
 
@@ -144,7 +143,7 @@ const ReviewView: React.FC<ReviewViewProps> = ({ vocabulary, contexts, onEdit })
         </div>
 
         {isFiltersOpen && (
-          <Tabs defaultValue="recent" className="mb-6" onValueChange={(value) => setReviewMode(value as 'recent' | 'random' | 'search')}>
+          <Tabs defaultValue={reviewMode} className="mb-6" value={reviewMode} onValueChange={(value) => setReviewMode(value as 'recent' | 'random' | 'search')}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="recent">Recent</TabsTrigger>
               <TabsTrigger value="random">Random</TabsTrigger>
