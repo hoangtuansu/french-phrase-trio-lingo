@@ -13,8 +13,10 @@ import {
   Title,
   LooksOne,
   LooksTwo,
-  Clear
+  Clear,
+  Image as ImageIcon
 } from "@mui/icons-material";
+
 // Define element renderers
 const BlockQuote = (props) => {
   return <blockquote 
@@ -29,6 +31,7 @@ const BlockQuote = (props) => {
     {props.children}
   </blockquote>;
 };
+
 const CodeElement = (props) => {
   return <pre 
     style={{ 
@@ -42,24 +45,52 @@ const CodeElement = (props) => {
     <code>{props.children}</code>
   </pre>;
 };
+
 const HeadingOneElement = (props) => {
   return <h1 {...props.attributes}>{props.children}</h1>;
 };
+
 const HeadingTwoElement = (props) => {
   return <h2 {...props.attributes}>{props.children}</h2>;
 };
+
 const BulletedListElement = (props) => {
   return <ul {...props.attributes}>{props.children}</ul>;
 };
+
 const NumberedListElement = (props) => {
   return <ol {...props.attributes}>{props.children}</ol>;
 };
+
 const ListItemElement = (props) => {
   return <li {...props.attributes}>{props.children}</li>;
 };
+
+// New Image Element renderer
+const ImageElement = (props) => {
+  return (
+    <div {...props.attributes} contentEditable={false} style={{ margin: '8px 0', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ position: 'relative' }}>
+        <img
+          src={props.element.url}
+          alt={props.element.alt || ''}
+          style={{ 
+            maxWidth: '100%', 
+            maxHeight: '400px',
+            display: 'block',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+          }}
+        />
+        {props.children}
+      </div>
+    </div>
+  );
+};
+
 const DefaultElement = (props) => {
   return <p style={{ margin: '0' }} {...props.attributes}>{props.children}</p>;
 };
+
 const Leaf = (props) => {
   let { leaf, attributes, children } = props;
   if (leaf.bold) {
@@ -76,6 +107,7 @@ const Leaf = (props) => {
   }
   return <span {...attributes}>{children}</span>;
 };
+
 function RichTextEditor({ editor }) {
   // Function to clear editor content
   const clearContent = () => {
@@ -95,6 +127,7 @@ function RichTextEditor({ editor }) {
       offset: 0,
     });
   };
+
   const renderElement = useCallback((props) => {
     switch (props.element.type) {
       case "code":
@@ -111,10 +144,13 @@ function RichTextEditor({ editor }) {
         return <NumberedListElement {...props} />;
       case "list-item":
         return <ListItemElement {...props} />;
+      case "image":
+        return <ImageElement {...props} />;
       default:
         return <DefaultElement {...props} />;
     }
   }, []);
+
   // Toggle marks (bold, italic, etc.)
   function toggleMark(mark) {
     const isActive = isMarkActive(editor, mark);
@@ -125,15 +161,18 @@ function RichTextEditor({ editor }) {
       Editor.addMark(editor, mark, true);
     }
   }
+
   // Check if a mark is active
   const isMarkActive = (editor, format) => {
     const marks = Editor.marks(editor);
     return marks ? marks[format] === true : false;
   };
+
   // Toggle blocks (headings, lists, etc.)
   function toggleBlock(format) {
     const isActive = isBlockActive(editor, format);
     const isList = ['numbered-list', 'bulleted-list'].includes(format);
+    
     // Unwrap any existing lists if toggling them off or changing types
     Transforms.unwrapNodes(editor, {
       match: n => 
@@ -142,22 +181,26 @@ function RichTextEditor({ editor }) {
         ['bulleted-list', 'numbered-list'].includes(n.type),
       split: true,
     });
+    
     // Set the appropriate node type
     const newProperties = {
       type: isActive ? 'paragraph' : isList ? 'list-item' : format,
     };
     
     Transforms.setNodes(editor, newProperties);
+    
     // If turning on a list type, wrap in the appropriate list element
     if (!isActive && isList) {
       const block = { type: format, children: [] };
       Transforms.wrapNodes(editor, block);
     }
   }
+
   // Check if a block type is active
   const isBlockActive = (editor, format) => {
     const { selection } = editor;
     if (!selection) return false;
+    
     const [match] = Array.from(
       Editor.nodes(editor, {
         at: Editor.unhangRange(editor, selection),
@@ -167,17 +210,22 @@ function RichTextEditor({ editor }) {
           n.type === format,
       })
     );
+    
     return !!match;
   };
+
   const renderLeaf = useCallback((props) => {
     return <Leaf {...props} />;
   }, []);
+
   // Handle keyboard shortcuts
   const onKeyDown = (event) => {
     if (!event.ctrlKey) {
       return;
     }
+    
     event.preventDefault();
+    
     switch (event.key) {
       case "b": {
         toggleMark("bold");
@@ -208,6 +256,64 @@ function RichTextEditor({ editor }) {
       }
     }
   };
+
+  // Function to insert an image
+  const insertImage = (url, alt = '') => {
+    const image = {
+      type: 'image',
+      url,
+      alt,
+      children: [{ text: '' }],
+    };
+    
+    Transforms.insertNodes(editor, image);
+    
+    // Add paragraph after image if at the end
+    const path = [...editor.selection.anchor.path];
+    const isLastNode = path[0] === editor.children.length - 1;
+    
+    if (isLastNode) {
+      Transforms.insertNodes(
+        editor,
+        { type: 'paragraph', children: [{ text: '' }] },
+        { at: [path[0] + 1] }
+      );
+      
+      // Move cursor to the new paragraph
+      Transforms.select(editor, {
+        path: [path[0] + 1, 0],
+        offset: 0,
+      });
+    }
+  };
+
+  // Handle paste event for images
+  const handlePaste = (event) => {
+    // Check for images in clipboard
+    const items = (event.clipboardData || window.clipboardData).items;
+    
+    if (!items) return;
+    
+    // Look for image items
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        event.preventDefault();
+        
+        // Get the image file
+        const blob = items[i].getAsFile();
+        
+        // Create a temporary URL for the image
+        const url = URL.createObjectURL(blob);
+        
+        // Insert the image into the editor
+        insertImage(url);
+        
+        // Break after handling one image
+        break;
+      }
+    }
+  };
+
   return (
     <div
       style={{
@@ -334,7 +440,7 @@ function RichTextEditor({ editor }) {
           <Code fontSize="small" />
         </IconButton>
         
-        {/* Clear button - now positioned next to other controls but with red color */}
+        {/* Clear button */}
         <IconButton
           size="small"
           style={{ 
@@ -363,14 +469,14 @@ function RichTextEditor({ editor }) {
           border: "1px solid #e0e0e0",
           borderRadius: "4px",
           lineHeight: "1.5",
-          // Fix for placeholder alignment
           position: "relative",
           caretColor: "black",
         }}
         onKeyDown={onKeyDown}
+        onPaste={handlePaste}
         renderLeaf={renderLeaf}
         renderElement={renderElement}
-        placeholder="Start typing..."
+        placeholder="Start typing or paste an image..."
         spellCheck
         decorate={([node, path]) => {
           // Correct placeholder vertical alignment with CSS
@@ -394,7 +500,24 @@ function RichTextEditor({ editor }) {
           return [];
         }}
       />
+      {/* Helper message */}
+      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px', textAlign: 'center' }}>
+        You can paste images from clipboard (Ctrl+V) directly into the editor
+      </div>
     </div>
   );
 }
-export { RichTextEditor };
+
+// Create a custom editor that adds image support
+const withImages = (editor) => {
+  const { isVoid } = editor;
+  
+  // Tell Slate that images are void elements (not editable)
+  editor.isVoid = (element) => {
+    return element.type === 'image' ? true : isVoid(element);
+  };
+  
+  return editor;
+};
+
+export { RichTextEditor, withImages };

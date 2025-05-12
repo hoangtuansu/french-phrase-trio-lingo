@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import Tesseract from 'tesseract.js';
 import { createEditor } from "slate";
 import { Slate, withReact } from "slate-react";
-import { RichTextEditor } from "@/components/ui/richtext";
+import { RichTextEditor, withImages } from "@/components/ui/richtext";
 
 const TESSERACT_LANG_CODES: Record<Language, string> = {
   english: 'eng',
@@ -241,20 +241,21 @@ const VocabularyInput: React.FC<VocabularyInputProps> = ({
   };
 
   const [editor] = useState(() => withReact(createEditor()));
-  const value = [
+  const initialValue = [
     {
       type: "paragraph",
-      children: [{ text: "Text Editor" }]
+      children: [{ text: "" }]
     }
   ];
+  const [value, setValue] = React.useState(initialValue);
   return (
     <>
       <Card className="w-full">
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6 pt-6">
             <div className="space-y-2">
-            <Slate editor={editor} initialValue={value}>
-              <RichTextEditor editor={editor} />
+            <Slate editor={editor} initialValue={value} onChange={newValue => setValue(newValue)}>
+              <RichTextEditor editor={editor}/>
             </Slate>
               <Label htmlFor="context">Context</Label>
               {tempPastedImage || localPastedImage ? (
