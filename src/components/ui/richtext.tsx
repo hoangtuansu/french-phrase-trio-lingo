@@ -12,7 +12,8 @@ import {
   FormatListNumbered,
   Title,
   LooksOne,
-  LooksTwo
+  LooksTwo,
+  Clear
 } from "@mui/icons-material";
 // Define element renderers
 const BlockQuote = (props) => {
@@ -57,7 +58,7 @@ const ListItemElement = (props) => {
   return <li {...props.attributes}>{props.children}</li>;
 };
 const DefaultElement = (props) => {
-  return <p style={{ margin: '0 0' }} {...props.attributes}>{props.children}</p>;
+  return <p style={{ margin: '0' }} {...props.attributes}>{props.children}</p>;
 };
 const Leaf = (props) => {
   let { leaf, attributes, children } = props;
@@ -76,6 +77,24 @@ const Leaf = (props) => {
   return <span {...attributes}>{children}</span>;
 };
 function RichTextEditor({ editor }) {
+  // Function to clear editor content
+  const clearContent = () => {
+    // Create a single empty paragraph node
+    const emptyNode = {
+      type: 'paragraph',
+      children: [{ text: '' }],
+    };
+    
+    // Reset editor with just that empty paragraph
+    editor.children = [emptyNode];
+    editor.onChange();
+    
+    // Move selection to the start
+    Transforms.select(editor, {
+      path: [0, 0],
+      offset: 0,
+    });
+  };
   const renderElement = useCallback((props) => {
     switch (props.element.type) {
       case "code":
@@ -313,6 +332,24 @@ function RichTextEditor({ editor }) {
           title="Code Block"
         >
           <Code fontSize="small" />
+        </IconButton>
+        
+        {/* Clear button - now positioned next to other controls but with red color */}
+        <IconButton
+          size="small"
+          style={{ 
+            color: "#f44336",
+            marginLeft: '2px'
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            if (window.confirm('Are you sure you want to clear all content?')) {
+              clearContent();
+            }
+          }}
+          title="Clear All Content"
+        >
+          <Clear />
         </IconButton>
       </div>
       
