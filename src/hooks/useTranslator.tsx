@@ -245,26 +245,11 @@ export const useTranslator = () => {
   ) => {
     // For demo purposes in absence of Supabase, create a local mock item
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-      // Push to local state directly for demo purposes
-      const mockItem: VocabularyItem = {
-        id: Math.floor(Math.random() * 10000),
-        word,
-        meaning,
-        context,
-        sourceLanguage,
-        targetLanguage,
-        created_at: new Date().toISOString()
-      };
-      
-      // Add the new item at the top of the list
-      queryClient.setQueryData(['vocabulary'], (oldData: VocabularyItem[] = []) => {
-        return [mockItem, ...oldData];
-      });
-      
       toast({
-        title: "Vocabulary added (Demo Mode)",
-        description: "Your vocabulary item has been saved locally. To enable persistent storage, connect Supabase.",
+        title: "Error",
+        description: 'Supabase configuration is missing'
       });
+      
       return;
     }
     

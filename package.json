@@ -61,7 +61,16 @@
     "tailwindcss-animate": "^1.0.7",
     "tesseract.js": "3.0.3",
     "vaul": "^0.9.3",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "slate": "^0.100.0",
+    "slate-react": "^0.100.0",
+    "slate-history": "^0.100.0",
+    "is-hotkey": "^0.2.0",
+    "react-is": "^18.2.0",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.11.16",
+    "@mui/material": "^5.11.16"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

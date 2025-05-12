@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { Language, Translation, TranslationMode, VocabularyItem } from '../types/language';
 
 // Default to empty strings if environment variables are not defined
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gizhrafxekladjhivbxm.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpemhyYWZ4ZWtsYWRqaGl2YnhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3NjM0NDUsImV4cCI6MjA2MTMzOTQ0NX0.xSvksmeeuOBZXpZNUZKeIAim0ZGZ-hSCEMb7pZ7TOX4';
 
 // Create a mock client when credentials are missing to prevent runtime errors
 const isMissingCredentials = !supabaseUrl || !supabaseKey;
